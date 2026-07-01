@@ -1,0 +1,88 @@
+:root {
+  /* Colors */
+  --color-primary: #111827;
+  --color-neutral-bg: #fcfbfa;
+  --color-surface: #ffffff;
+  --color-muted-ink: #4b5563;
+  --color-border: #e5e7eb;
+  --color-status-normal: #10b981;
+  --color-status-warning: #f59e0b;
+  --color-status-alert: #ef4444;
+
+  /* Font System */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Radii */
+  --rounded-sm: 4px;
+  --rounded-md: 8px;
+  --rounded-full: 9999px;
+
+  /* Spacing */
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Base Setup */
+  color-scheme: light;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-primary);
+  background-color: var(--color-neutral-bg);
+  
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-neutral-bg);
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Typography elements */
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  color: var(--color-primary);
+}
+
+p {
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Scrollbar styles matching clean, restrained aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-neutral-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--rounded-sm);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted-ink);
+}
