@@ -352,7 +352,7 @@ function App() {
                     </span>
                   </div>
                   <div className="sensor-value-container">
-                    <span className="sensor-value">{sensor.value}</span>
+                    <span key={sensor.value} className="sensor-value value-update-pulse">{sensor.value}</span>
                     <span className="sensor-unit">{sensor.unit}</span>
                   </div>
                   <div className="sensor-footer">
@@ -397,21 +397,21 @@ function App() {
                 </span>
               </div>
               <div className="details-grid">
-                <div className="details-stat">
+                <div className="details-stat" style={{ "--i": 0 } as React.CSSProperties}>
                   <span className="stat-label">Daily Minimum</span>
                   <span className="stat-value">
                     {sensors[selectedSensor].dailyMin}
                     {sensors[selectedSensor].unit}
                   </span>
                 </div>
-                <div className="details-stat">
+                <div className="details-stat" style={{ "--i": 1 } as React.CSSProperties}>
                   <span className="stat-label">Daily Maximum</span>
                   <span className="stat-value">
                     {sensors[selectedSensor].dailyMax}
                     {sensors[selectedSensor].unit}
                   </span>
                 </div>
-                <div className="details-stat">
+                <div className="details-stat" style={{ "--i": 2 } as React.CSSProperties}>
                   <span className="stat-label">Safety Status</span>
                   <span className="stat-value" style={{ 
                     color: sensors[selectedSensor].status === "alert" 

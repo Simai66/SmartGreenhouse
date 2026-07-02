@@ -177,7 +177,7 @@
   right: 0;
   bottom: 0;
   background-color: #e5e7eb;
-  transition: .15s ease-in-out;
+  transition: background-color 0.2s var(--ease-out-quart);
   border-radius: 24px;
 }
 
@@ -189,7 +189,7 @@
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: .15s ease-in-out;
+  transition: transform 0.2s var(--ease-out-quart);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -230,7 +230,7 @@ input:focus-visible + .toggle-slider {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  transition: transform 0.25s var(--ease-out-quart), box-shadow 0.25s var(--ease-out-quart), border-color 0.2s var(--ease-out-quart);
   cursor: pointer;
 }
 
@@ -329,7 +329,7 @@ input:focus-visible + .toggle-slider {
   border: 1px solid var(--color-border);
   border-radius: var(--rounded-md);
   padding: var(--spacing-lg);
-  animation: fadeIn 0.15s ease-out;
+  animation: slideUpFade 0.4s var(--ease-out-quart) both;
 }
 
 .details-header {
@@ -356,6 +356,8 @@ input:focus-visible + .toggle-slider {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  animation: slideUpFade 0.35s var(--ease-out-quart) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
 }
 
 .stat-label {
@@ -395,13 +397,41 @@ input:focus-visible + .toggle-slider {
 
 /* Animations */
 @keyframes slideDown {
-  from { transform: translateY(-100%); opacity: 0; }
+  from { transform: translateY(-12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+@keyframes slideUpFade {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulseUpdate {
+  0% { transform: scale(0.97); filter: brightness(1.05); }
+  50% { transform: scale(1.02); filter: brightness(0.98); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.value-update-pulse {
+  display: inline-block;
+  animation: pulseUpdate 0.25s var(--ease-out-quint) forwards;
+}
+
+/* Sparkline Draw-in Effect */
+@keyframes drawPath {
+  from { stroke-dashoffset: 150; }
+  to { stroke-dashoffset: 0; }
+}
+
+svg path {
+  stroke-dasharray: 150;
+  stroke-dashoffset: 150;
+  animation: drawPath 0.75s var(--ease-out-quint) forwards;
 }
 
 /* Responsive Overrides */
@@ -433,3 +463,4 @@ input:focus-visible + .toggle-slider {
     grid-template-columns: 1fr;
   }
 }
+
