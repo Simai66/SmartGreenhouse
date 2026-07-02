@@ -534,10 +534,10 @@ function App() {
                         data={sensor.history}
                         strokeColor={
                           sensor.status === "alert"
-                            ? "var(--color-status-alert)"
+                            ? "var(--color-status-alert-strong)"
                             : sensor.status === "warning"
-                            ? "var(--color-status-warning)"
-                            : "var(--color-status-normal)"
+                            ? "var(--color-status-warning-strong)"
+                            : "var(--color-status-normal-strong)"
                         }
                         fillColor={
                           sensor.status === "alert"
@@ -588,10 +588,10 @@ function App() {
                   <span className="stat-label">Safety Status</span>
                   <span className="stat-value" style={{ 
                     color: sensors[selectedSensor].status === "alert" 
-                      ? "var(--color-status-alert)" 
+                      ? "var(--color-status-alert-strong)" 
                       : sensors[selectedSensor].status === "warning"
-                      ? "var(--color-status-warning)"
-                      : "var(--color-status-normal)",
+                      ? "var(--color-status-warning-strong)"
+                      : "var(--color-status-normal-strong)",
                     fontSize: "1.125rem",
                     fontWeight: 600
                   }}>
@@ -630,7 +630,7 @@ function App() {
                     <div className="viewport-placeholder">
                       <CameraIcon />
                       <span style={{ fontSize: "0.875rem" }}>No image active</span>
-                      <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>
+                      <span style={{ fontSize: "0.75rem", color: "var(--color-muted-ink)" }}>
                         Start camera or upload a leaf image file
                       </span>
                     </div>
@@ -674,7 +674,7 @@ function App() {
                           Run Diagnostics
                         </button>
                       )}
-                      <button className="action-button" onClick={resetDiagnostics} style={{ backgroundColor: "#fee2e2", color: "#991b1b", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <button className="action-button btn-alert" onClick={resetDiagnostics} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <TrashIcon /> Clear / Reset
                       </button>
                     </>
@@ -737,7 +737,9 @@ function App() {
                         <div
                           className="confidence-bar"
                           style={{
-                            width: `${diagnosticResult.confidence}%`,
+                            width: "100%",
+                            transform: `scaleX(${diagnosticResult.confidence / 100})`,
+                            transformOrigin: "left",
                             backgroundColor:
                               diagnosticResult.status === "alert"
                                 ? "var(--color-status-alert)"
@@ -818,23 +820,21 @@ function App() {
               </span>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
                 <button 
-                  className="action-button" 
-                  style={{ backgroundColor: "#fee2e2", color: "#991b1b" }} 
+                  className="action-button btn-alert" 
                   onClick={() => triggerSimulationEvent("hot")}
                 >
                   Hot Alert
                 </button>
                 <button 
-                  className="action-button" 
-                  style={{ backgroundColor: "#fef3c7", color: "#92400e" }} 
+                  className="action-button btn-warning" 
                   onClick={() => triggerSimulationEvent("dry")}
                 >
                   Dry Alert
                 </button>
               </div>
               <button 
-                className="action-button" 
-                style={{ width: "100%", backgroundColor: "#e0f2fe", color: "#0369a1" }} 
+                className="action-button btn-normal" 
+                style={{ width: "100%" }} 
                 onClick={() => triggerSimulationEvent("normal")}
               >
                 Reset to Normal

@@ -6,8 +6,12 @@
   --color-muted-ink: #4b5563;
   --color-border: #e5e7eb;
   --color-status-normal: #10b981;
+  --color-status-normal-strong: #047857;
   --color-status-warning: #f59e0b;
+  --color-status-warning-strong: #b45309;
   --color-status-alert: #ef4444;
+  --color-status-alert-strong: #b91c1c;
+  --color-control-track-off: #6b7280;
 
   /* Font System */
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

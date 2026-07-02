@@ -8,8 +8,12 @@ colors:
   muted-ink: "#4b5563"
   border: "#e5e7eb"
   status-normal: "#10b981"
+  status-normal-strong: "#047857"
   status-warning: "#f59e0b"
+  status-warning-strong: "#b45309"
   status-alert: "#ef4444"
+  status-alert-strong: "#b91c1c"
+  control-track-off: "#6b7280"
 typography:
   display:
     fontFamily: "Inter, system-ui, sans-serif"
@@ -76,6 +80,7 @@ This system explicitly rejects complex engineering-style graphs, hacker-mode neo
 - Clear, descriptive visual hierarchy
 - Restrained color strategy focusing attention on semantic status alerts
 - Large, touch-friendly interactive targets
+- Every semantic color ships in two roles — a saturated "fill" tone for backgrounds/tints, and a darker "strong" tone reserved for anything that must pass text/icon contrast (badge text, chart lines, status dots)
 
 ## 2. Colors
 
@@ -87,16 +92,21 @@ The color palette is highly restrained, using clean off-whites and dark grays as
 ### Neutral
 - **Daylight Off-White** (#fcfbfa / oklch(98.5% 0.002 70)): The main background canvas. High-contrast under sunlight.
 - **Card Surface White** (#ffffff): Card container background to separate telemetry items from the canvas.
-- **Muted Ink** (#4b5563): Supporting text, secondary labels, and unit indicators.
-- **Light Border** (#e5e7eb): Panel lines, dividers, and card borders.
+- **Muted Ink** (#4b5563): Supporting text, secondary labels, and unit indicators. Verified 7.56:1 against both surface whites — safe for body-size supporting text.
+- **Light Border** (#e5e7eb): Panel lines and card dividers only. Decorative — never use to convey a state (see Control Track Off below for that case).
+- **Control Track Off** (#6b7280): Dedicated color for toggle/switch tracks in the "off" position. 4.83:1 against white — #e5e7eb was measured at only 1.24:1 and is not distinguishable enough to convey an interactive state.
 
 ### Status Colors
-- **Vibrant Normal Green** (#10b981 / oklch(70% 0.17 150)): Safe system operations and stable sensors.
-- **Warning Amber** (#f59e0b / oklch(75% 0.18 70)): Approaching thresholds.
-- **Alert Red** (#ef4444 / oklch(60% 0.22 25)): Critically out-of-bounds sensor readings.
+Each status has a **fill** tone (saturated, for badge/tint backgrounds and large decorative accents — not required to pass text contrast) and a **strong** tone (darker, for anything that has to be read or must pass 3:1/4.5:1 — badge text, status dots, chart lines, icons).
+
+- **Vibrant Normal Green** — fill `#10b981`, strong `#047857` (5.48:1 on white, 3.77:1+ as a chart line, 4.5:1+ on its own 10%-tint badge background)
+- **Warning Amber** — fill `#f59e0b`, strong `#b45309` (5.02:1 on white, 4.65:1 on its own 10%-tint badge background)
+- **Alert Red** — fill `#ef4444`, strong `#b91c1c` (6.47:1 on white, 5.69:1 on its own 10%-tint badge background)
 
 ### Named Rules
-**The 10% Alert Rule.** Saturated colors (green, amber, red) must never cover more than 10% of the screen area at any given time. Their high visual weight must be reserved exclusively to draw the operator’s eye to alerts.
+**The 10% Alert Rule.** Saturated *fill* colors (green, amber, red) must never cover more than 10% of the screen area at any given time. Their high visual weight must be reserved exclusively to draw the operator's eye to alerts.
+
+**The Fill/Strong Split Rule.** Never set a fill color as text, icon fill, chart-line stroke, or status-dot fill directly against a light background (white, off-white, or its own 10%-tint) — measured contrast is as low as ~2.3:1, well under AA. Always use the matching `-strong` token for those roles. Fill tones exist only to color badge/tint backgrounds and large non-informational accents.
 
 ## 3. Typography
 
@@ -130,22 +140,25 @@ The system utilizes tonal layering and subtle borders instead of soft, wide shad
 - **Primary:** Deep Slate Ink (#111827) background with Daylight Off-White (#fcfbfa) text. Padding: 8px 16px.
 - **Hover:** Light transition to an oklch tint, or a subtle opacity shift (90%).
 - **Secondary:** Transparent background with 1px border (#e5e7eb) and Deep Slate Ink text.
+- **Semantic action buttons** (e.g. "Trigger Hot Alert"): background = status `fill` tone at full opacity (not 10% tint), text = white (`#fcfbfa`). Do not pair a status `fill`/tint background with a same-hue text color — that combination consistently fails contrast (~2–3:1 measured across all three status hues).
 
 ### Status Badges
 - **Shape:** Full pill (9999px radius)
-- **Normal**: Light green background (10% opacity of #10b981) with Vibrant Normal Green (#10b981) text.
-- **Warning**: Light amber background (10% opacity of #f59e0b) with Warning Amber (#f59e0b) text.
-- **Alert**: Light red background (10% opacity of #ef4444) with Alert Red (#ef4444) text.
+- **Normal**: Light green background (10% opacity of `status-normal` #10b981) with `status-normal-strong` (#047857) text.
+- **Warning**: Light amber background (10% opacity of `status-warning` #f59e0b) with `status-warning-strong` (#b45309) text.
+- **Alert**: Light red background (10% opacity of `status-alert` #ef4444) with `status-alert-strong` (#b91c1c) text.
 
 ### Sensor Cards
 - **Shape:** Rounded corners (8px radius)
 - **Background:** Pure Card Surface White (#ffffff) with a 1px border (#e5e7eb).
 - **Internal Padding:** Generous 24px (`spacing.lg`).
 - **Layout**: Telemetry header, main reading text in Display weight, supporting sparkline, and status badge inline.
+- **Sparkline stroke**: use the matching `-strong` status color (e.g. `#047857` for a normal reading), never the raw fill tone — the fill tone measures below 3:1 against a white card and fails the non-text contrast requirement for meaningful graphics.
 
 ### Inputs / Toggles
-- **Switch Toggle**: Slide button for automated equipment override. The track uses a light neutral (#e5e7eb) when off, and switches to Vibrant Normal Green (#10b981) when active.
+- **Switch Toggle**: Slide button for automated equipment override. The track uses `control-track-off` (#6b7280) when off, and switches to `status-normal` (#10b981) when active. (Do not use `border` #e5e7eb for the off-state track — it's nearly invisible against white/off-white surfaces and fails to convey the control's state.)
 - **Input Fields**: 1px border (#e5e7eb) with 4px border radius. Focus state uses a solid 1px Deep Slate Ink (#111827) outline.
+- **Focus indicator**: every interactive control (toggle, button, card, input) must render a visible focus ring on keyboard focus — minimum 2px, Deep Slate Ink or equivalent, never relying on color/background change alone.
 
 ## 6. Do's and Don'ts
 
@@ -153,9 +166,13 @@ The system utilizes tonal layering and subtle borders instead of soft, wide shad
 - **Do** check all text and status colors against a minimum contrast ratio of 4.5:1 for body and 3:1 for large display elements.
 - **Do** ensure all clickable target elements (toggles, cards, buttons) have a minimum dimensions of 44×44px for touch safety.
 - **Do** pair color changes with text labels (e.g. "Alert" + Red indicator) to accommodate color-blind operators.
+- **Do** use the `-strong` variant of a status color for any text, icon, dot, or chart line — reserve the raw `fill` tone for backgrounds/tints only.
+- **Do** give every toggle/switch a visible focus ring and an off-state track color that clears 3:1 against its surface.
 
 ### Don't:
 - **Don't** use border-left or border-right accent stripes to denote status on cards. Use semantic badges instead.
 - **Don't** implement dark hacker terminal interfaces. The dashboard is daylight-first.
 - **Don't** use decorative page-load motion or complex transitions. Keep UI transitions snappy (under 150ms).
 - **Don't** combine a 1px border with a soft wide shadow (blur > 8px) on cards or buttons. Pick one.
+- **Don't** set a status `fill` color as text or stroke on a light/tint background of the same hue — this pattern measures as low as ~2.3:1 and fails AA every time.
+- **Don't** reuse the neutral `border` (#e5e7eb) token for anything that needs to communicate state (e.g. toggle tracks) — it's a decorative divider color only, not a UI-component-contrast-safe color.
