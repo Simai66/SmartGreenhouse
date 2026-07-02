@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Sparkline } from './components/Sparkline';
 import './App.css';
 
@@ -44,7 +44,36 @@ const AlertTriangleIcon = () => (
   </svg>
 );
 
+const CameraIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+    <circle cx="12" cy="13" r="4" />
+  </svg>
+);
+
+const UploadIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="15" />
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+  </svg>
+);
+
 type Status = "normal" | "warning" | "alert";
+
+interface DiagnosticResult {
+  disease: string;
+  confidence: number;
+  status: Status;
+  recommendations: string[];
+}
 
 interface SensorData {
   id: string;
@@ -133,6 +162,150 @@ function App() {
   const [selectedSensor, setSelectedSensor] = useState<string>("temp");
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [simulationActive, setSimulationActive] = useState<boolean>(true);
+
+  // 4. AI Crop Disease Diagnostics States
+  const [cameraActive, setCameraActive] = useState<boolean>(false);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [scanState, setScanState] = useState<"idle" | "scanning" | "completed">("idle");
+  const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Auto-mount video stream when camera active
+  useEffect(() => {
+    if (cameraActive && stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [cameraActive, stream]);
+
+  // Cleanup stream on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  // Start webcam video stream
+  const startCamera = async () => {
+    setCapturedImage(null);
+    setScanState("idle");
+    setDiagnosticResult(null);
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+      setStream(mediaStream);
+      setCameraActive(true);
+    } catch (err) {
+      console.error("Camera access error:", err);
+      alert("Cannot access camera. Please upload an image file instead.");
+    }
+  };
+
+  // Stop webcam video stream
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    setStream(null);
+    setCameraActive(false);
+  };
+
+  // Capture frame from video stream
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    if (video) {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        // Draw mirrored preview
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/png");
+        setCapturedImage(dataUrl);
+        stopCamera();
+      }
+    }
+  };
+
+  // Handle uploaded image file
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setCapturedImage(event.target.result as string);
+          setScanState("idle");
+          setDiagnosticResult(null);
+          stopCamera();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Mock results list for simulation
+  const mockDiagnosticResults: DiagnosticResult[] = [
+    {
+      disease: "Tomato Leaf Mold (Passalora fulva)",
+      confidence: 94,
+      status: "alert",
+      recommendations: [
+        "Increase ventilation fan speed (Turn Ventilation Fan ON).",
+        "Apply organic copper-based fungicide to infected leaves.",
+        "Avoid overhead irrigation to keep foliage dry."
+      ]
+    },
+    {
+      disease: "Spider Mite Infestation (Tetranychidae)",
+      confidence: 86,
+      status: "warning",
+      recommendations: [
+        "Spray lower leaf surfaces with neem oil or insecticidal soap.",
+        "Introduce predatory mites (biological control agent).",
+        "Prune and safely destroy heavily infested leaves."
+      ]
+    },
+    {
+      disease: "Healthy Leaf - No Pathology Detected",
+      confidence: 98,
+      status: "normal",
+      recommendations: [
+        "Continue maintaining current telemetry safety ranges.",
+        "Prune lower branches occasionally to maintain optimal airflow."
+      ]
+    }
+  ];
+
+  // Run mock scanner scan
+  const runScan = () => {
+    if (!capturedImage) return;
+    setScanState("scanning");
+    setDiagnosticResult(null);
+
+    // Scan lasts 2.5 seconds
+    setTimeout(() => {
+      setScanState("completed");
+      const randomIdx = Math.floor(Math.random() * mockDiagnosticResults.length);
+      setDiagnosticResult(mockDiagnosticResults[randomIdx]);
+    }, 2500);
+  };
+
+  // Reset diagnostic panel
+  const resetDiagnostics = () => {
+    setCapturedImage(null);
+    setScanState("idle");
+    setDiagnosticResult(null);
+    stopCamera();
+  };
 
   // Status mapping logic
   const determineStatus = (id: string, val: number, minTh: number, maxTh: number): { status: Status; text: string } => {
@@ -428,6 +601,178 @@ function App() {
               </div>
             </div>
           )}
+
+          {/* AI Diagnostics Panel */}
+          <div className="diagnostics-panel" style={{ marginTop: "var(--spacing-lg)" }}>
+            <div className="card-header">
+              <span className="details-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <LeafIcon />
+                AI Crop Disease Diagnostics
+              </span>
+              <span className="status-badge normal">AI-Powered</span>
+            </div>
+            
+            <div className="diagnostics-layout">
+              {/* Left Column: Viewport */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div className="camera-viewport">
+                  {cameraActive ? (
+                    <video
+                      id="camera-stream"
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      className="camera-video"
+                    />
+                  ) : capturedImage ? (
+                    <img src={capturedImage} alt="Captured leaf" className="captured-image" />
+                  ) : (
+                    <div className="viewport-placeholder">
+                      <CameraIcon />
+                      <span style={{ fontSize: "0.875rem" }}>No image active</span>
+                      <span style={{ fontSize: "0.75rem", color: "#6b7280" }}>
+                        Start camera or upload a leaf image file
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Laser Scanner animation during scanning */}
+                  {scanState === "scanning" && (
+                    <div className="scanner-overlay">
+                      <div className="scanner-laser" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="camera-actions">
+                  {!cameraActive && !capturedImage && (
+                    <>
+                      <button className="action-button" onClick={startCamera} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <CameraIcon /> Start Camera
+                      </button>
+                      <button className="action-button" onClick={() => fileInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
+                        <UploadIcon /> Upload Photo
+                      </button>
+                    </>
+                  )}
+
+                  {cameraActive && (
+                    <>
+                      <button className="action-button" onClick={capturePhoto} style={{ backgroundColor: "var(--color-status-normal)" }}>
+                        Capture Photo
+                      </button>
+                      <button className="action-button" onClick={stopCamera} style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
+                        Cancel
+                      </button>
+                    </>
+                  )}
+
+                  {capturedImage && scanState !== "scanning" && (
+                    <>
+                      {scanState === "idle" && (
+                        <button className="action-button" onClick={runScan} style={{ backgroundColor: "var(--color-status-normal)" }}>
+                          Run Diagnostics
+                        </button>
+                      )}
+                      <button className="action-button" onClick={resetDiagnostics} style={{ backgroundColor: "#fee2e2", color: "#991b1b", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <TrashIcon /> Clear / Reset
+                      </button>
+                    </>
+                  )}
+
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageUpload}
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    aria-label="Upload leaf image"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column: Diagnostic Results */}
+              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                {scanState === "idle" && capturedImage && (
+                  <div style={{ textAlign: "center", padding: "20px", color: "var(--color-muted-ink)" }}>
+                    <span style={{ fontSize: "0.875rem", display: "block", marginBottom: "8px" }}>Image ready for analysis</span>
+                    <button className="action-button" onClick={runScan} style={{ width: "100%", maxWidth: "200px", margin: "0 auto" }}>
+                      Scan Leaf
+                    </button>
+                  </div>
+                )}
+
+                {scanState === "scanning" && (
+                  <div style={{ textAlign: "center", padding: "20px" }}>
+                    <span className="value-update-pulse" style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--color-status-normal)", display: "block", marginBottom: "8px" }}>
+                      Scanning Leaf Tissue...
+                    </span>
+                    <span style={{ fontSize: "0.875rem", color: "var(--color-muted-ink)" }}>
+                      AI is identifying cell pathologies and symptoms
+                    </span>
+                  </div>
+                )}
+
+                {scanState === "completed" && diagnosticResult && (
+                  <div className="diagnostics-results">
+                    <div className="results-header">
+                      <span className="results-title">Diagnostic Result</span>
+                      <span className={`status-badge ${diagnosticResult.status}`}>
+                        {diagnosticResult.status === "normal" ? "Healthy" : "Infected"}
+                      </span>
+                    </div>
+                    <div>
+                      <strong style={{ fontSize: "1.125rem", color: "var(--color-primary)", display: "block" }}>
+                        {diagnosticResult.disease}
+                      </strong>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                        <span style={{ fontSize: "0.875rem", color: "var(--color-muted-ink)" }}>
+                          Confidence:
+                        </span>
+                        <strong style={{ fontSize: "0.875rem", color: "var(--color-primary)" }}>
+                          {diagnosticResult.confidence}%
+                        </strong>
+                      </div>
+                      <div className="confidence-bar-container">
+                        <div
+                          className="confidence-bar"
+                          style={{
+                            width: `${diagnosticResult.confidence}%`,
+                            backgroundColor:
+                              diagnosticResult.status === "alert"
+                                ? "var(--color-status-alert)"
+                                : diagnosticResult.status === "warning"
+                                ? "var(--color-status-warning)"
+                                : "var(--color-status-normal)",
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div style={{ borderTop: "1px dashed var(--color-border)", paddingTop: "12px", marginTop: "4px" }}>
+                      <span className="stat-label" style={{ fontSize: "0.75rem", display: "block", marginBottom: "8px" }}>
+                        Recommended Action Plan:
+                      </span>
+                      <ul className="recommendations-list">
+                        {diagnosticResult.recommendations.map((rec, i) => (
+                          <li key={i}>{rec}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+
+                {scanState === "idle" && !capturedImage && (
+                  <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--color-muted-ink)" }}>
+                    <LeafIcon />
+                    <p style={{ fontSize: "0.875rem", marginTop: "12px" }}>
+                      Select a leaf image to test disease diagnostic capabilities
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Right Side: Device Controls & System Actions */}
