@@ -1,5 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Sparkline } from './components/Sparkline';
+import { SensorCard } from './components/SensorCard';
+import { SensorHistoryChart } from './components/SensorHistoryChart';
+import { useAutoCapture } from './hooks/useAutoCapture';
+import { useSensorData } from './hooks/useSensorData';
 import './App.css';
 
 // SVG Icons inline to avoid external dependencies and stay self-contained
@@ -66,6 +70,34 @@ const TrashIcon = () => (
   </svg>
 );
 
+// ไอคอนสลับกล้อง (หน้า/หลัง)
+const RefreshCwIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="23 4 23 10 17 10" />
+    <polyline points="1 20 1 14 7 14" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </svg>
+);
+
+// ไอคอนปิด (X)
+const XIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+// ไอคอนนาฬิกา/จับเวลา สำหรับ Auto Capture
+const TimerIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="13" r="8" />
+    <path d="M12 9v4l2 2" />
+    <path d="M5 3L2 6" />
+    <path d="M22 6l-3-3" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+  </svg>
+);
+
 type Status = "normal" | "warning" | "alert";
 
 interface DiagnosticResult {
@@ -73,6 +105,14 @@ interface DiagnosticResult {
   confidence: number;
   status: Status;
   recommendations: string[];
+}
+
+interface ControlLog {
+  id: string;
+  timestamp: string;
+  device: string;
+  action: "ON" | "OFF" | "MODE";
+  trigger: string;
 }
 
 interface SensorData {
@@ -154,7 +194,8 @@ function App() {
   // 2. Control Equipment States
   const [controls, setControls] = useState({
     fan: { name: "Ventilation Fan", checked: true, statusText: "Running (Speed: Medium)" },
-    pump: { name: "Water Pump", checked: false, statusText: "Off (Last run: 3h ago)" },
+    pump: { name: "Water Pump", checked: false, statusText: "Off" },
+    growLight: { name: "Grow Light System", checked: false, statusText: "Off" },
     shade: { name: "Shade Cloth", checked: true, statusText: "Deployed (100%)" },
   });
 
@@ -163,15 +204,57 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [simulationActive, setSimulationActive] = useState<boolean>(true);
 
+  // --- โหมดแหล่งข้อมูล: Demo (mock) หรือ Live (D1 API) ---
+  const [dataSource, setDataSource] = useState<'demo' | 'live'>('demo');
+
+  // --- Custom Hook: ดึงข้อมูลเซนเซอร์จาก API (ทำงานเฉพาะโหมด Live) ---
+  const liveSensor = useSensorData({ enabled: dataSource === 'live' });
+
+  // 4. Automated Control System States & Log Helper
+  const [autoMode, setAutoMode] = useState<boolean>(true);
+  const [controlLogs, setControlLogs] = useState<ControlLog[]>([
+    {
+      id: "init",
+      timestamp: new Date().toLocaleTimeString(),
+      device: "System",
+      action: "MODE",
+      trigger: "System Initialized in Auto Mode"
+    }
+  ]);
+
+  const logControlAction = (device: string, action: "ON" | "OFF" | "MODE", trigger: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const newLog: ControlLog = {
+      id: Math.random().toString(36).substr(2, 9),
+      timestamp,
+      device,
+      action,
+      trigger
+    };
+    setControlLogs((prev) => [newLog, ...prev].slice(0, 10)); // Keep last 10 logs
+  };
+
   // 4. AI Crop Disease Diagnostics States
   const [cameraActive, setCameraActive] = useState<boolean>(false);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  // เปลี่ยนจากเก็บรูปเดียวเป็น gallery array — รองรับถ่ายต่อเนื่อง
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+  // index ของรูปที่เลือกจาก gallery เพื่อนำไป scan
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(-1);
   const [scanState, setScanState] = useState<"idle" | "scanning" | "completed">("idle");
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  // สลับกล้องหน้า/หลัง
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
+  // เปิด/ปิดโหมดถ่ายอัตโนมัติ
+  const [autoCaptureEnabled, setAutoCaptureEnabled] = useState<boolean>(false);
   
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // คำนวณ capturedImage จาก gallery + selectedIndex สำหรับ backward compat
+  const capturedImage = selectedImageIndex >= 0 && selectedImageIndex < capturedImages.length
+    ? capturedImages[selectedImageIndex]
+    : null;
 
   // Auto-mount video stream when camera active
   useEffect(() => {
@@ -189,14 +272,72 @@ function App() {
     };
   }, [stream]);
 
-  // Start webcam video stream
-  const startCamera = async () => {
-    setCapturedImage(null);
+  // Automated Control Logic Trigger
+  useEffect(() => {
+    if (!autoMode) return;
+
+    const moistureVal = sensors.moisture.value;
+    const lightVal = sensors.light.value;
+
+    let updated = false;
+    let newPumpChecked = controls.pump.checked;
+    let newPumpText = controls.pump.statusText;
+    let newLightChecked = controls.growLight.checked;
+    let newLightText = controls.growLight.statusText;
+
+    // Water Pump automation
+    if (moistureVal < 35 && !controls.pump.checked) {
+      newPumpChecked = true;
+      newPumpText = "Watering Active (Auto)";
+      updated = true;
+      logControlAction("Water Pump", "ON", `Auto: Moisture ${moistureVal}% < 35%`);
+    } else if (moistureVal > 75 && controls.pump.checked) {
+      newPumpChecked = false;
+      newPumpText = "Off";
+      updated = true;
+      logControlAction("Water Pump", "OFF", `Auto: Moisture ${moistureVal}% > 75%`);
+    }
+
+    // Grow Light automation
+    if (lightVal < 300 && !controls.growLight.checked) {
+      newLightChecked = true;
+      newLightText = "ON (Full Spectrum)";
+      updated = true;
+      logControlAction("Grow Light System", "ON", `Auto: Light ${lightVal} Lux < 300 Lux`);
+    } else if (lightVal > 1200 && controls.growLight.checked) {
+      newLightChecked = false;
+      newLightText = "Off";
+      updated = true;
+      logControlAction("Grow Light System", "OFF", `Auto: Light ${lightVal} Lux > 1200 Lux`);
+    }
+
+    if (updated) {
+      setControls((prev) => ({
+        ...prev,
+        pump: {
+          ...prev.pump,
+          checked: newPumpChecked,
+          statusText: newPumpText,
+        },
+        growLight: {
+          ...prev.growLight,
+          checked: newLightChecked,
+          statusText: newLightText,
+        }
+      }));
+    }
+  }, [autoMode, sensors.moisture.value, sensors.light.value, controls.pump.checked, controls.growLight.checked]);
+
+  // เปิดกล้อง — ใช้ facingMode ปัจจุบัน
+  const startCamera = async (requestedFacingMode?: "user" | "environment") => {
+    const mode = requestedFacingMode || facingMode;
+    // รีเซ็ตเฉพาะ scan state ไม่ลบ gallery
     setScanState("idle");
     setDiagnosticResult(null);
+    setSelectedImageIndex(-1);
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
+        video: { facingMode: mode }
       });
       setStream(mediaStream);
       setCameraActive(true);
@@ -206,8 +347,10 @@ function App() {
     }
   };
 
-  // Stop webcam video stream
+  // ปิดกล้อง — ปิด stream + reset state
   const stopCamera = () => {
+    // ปิด auto capture ด้วยเมื่อปิดกล้อง
+    setAutoCaptureEnabled(false);
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
     }
@@ -215,8 +358,20 @@ function App() {
     setCameraActive(false);
   };
 
-  // Capture frame from video stream
-  const capturePhoto = () => {
+  // สลับกล้องหน้า/หลัง — ปิด stream เก่า แล้วเปิดใหม่ด้วย facingMode ตรงข้าม
+  const switchCamera = async () => {
+    const newMode = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(newMode);
+    // ปิด stream เก่า
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    // เปิดใหม่ด้วย facingMode ใหม่
+    await startCamera(newMode);
+  };
+
+  // ถ่ายรูปจาก video stream — กล้องยังเปิดค้างอยู่ ไม่ปิด!
+  const capturePhoto = useCallback(() => {
     const video = videoRef.current;
     if (video) {
       const canvas = document.createElement("canvas");
@@ -229,20 +384,38 @@ function App() {
         ctx.scale(-1, 1);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL("image/png");
-        setCapturedImage(dataUrl);
-        stopCamera();
+        // เก็บรูปเข้า gallery (สูงสุด 10 รูป, ลบรูปเก่าสุดออก)
+        setCapturedImages((prev) => {
+          const updated = [dataUrl, ...prev].slice(0, 10);
+          return updated;
+        });
+        // เลือกรูปล่าสุดเป็นตัวที่ active
+        setSelectedImageIndex(0);
+        // รีเซ็ต scan state สำหรับรูปใหม่
+        setScanState("idle");
+        setDiagnosticResult(null);
+        // *** ไม่เรียก stopCamera() — กล้องเปิดค้าง ถ่ายต่อได้เลย ***
       }
     }
+  }, []);
+
+  // เลือกรูปจาก gallery เพื่อนำไป scan
+  const selectCapturedImage = (index: number) => {
+    setSelectedImageIndex(index);
+    setScanState("idle");
+    setDiagnosticResult(null);
   };
 
-  // Handle uploaded image file
+  // อัปโหลดรูปจากไฟล์ — เก็บเข้า gallery เหมือนถ่ายรูป
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          setCapturedImage(event.target.result as string);
+          const dataUrl = event.target.result as string;
+          setCapturedImages((prev) => [dataUrl, ...prev].slice(0, 10));
+          setSelectedImageIndex(0);
           setScanState("idle");
           setDiagnosticResult(null);
           stopCamera();
@@ -250,6 +423,23 @@ function App() {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  // ใช้ useAutoCapture hook — ถ่ายรูปอัตโนมัติทุก 60 นาที
+  // สำหรับ dev/testing: เปลี่ยนเป็น 10 * 1000 (10 วินาที) ได้
+  const AUTO_CAPTURE_INTERVAL_MS = 60 * 60 * 1000; // 60 นาที
+  const { remainingSeconds: autoCaptureRemaining, isActive: autoCaptureActive } = useAutoCapture({
+    enabled: autoCaptureEnabled,
+    intervalMs: AUTO_CAPTURE_INTERVAL_MS,
+    onCapture: capturePhoto,
+    isCameraReady: cameraActive && !!stream,
+  });
+
+  // จัดรูปแบบ countdown เป็น MM:SS
+  const formatCountdown = (totalSeconds: number): string => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Mock results list for simulation
@@ -299,9 +489,10 @@ function App() {
     }, 2500);
   };
 
-  // Reset diagnostic panel
+  // รีเซ็ต diagnostic panel — ลบ gallery ทั้งหมด + ปิดกล้อง
   const resetDiagnostics = () => {
-    setCapturedImage(null);
+    setCapturedImages([]);
+    setSelectedImageIndex(-1);
     setScanState("idle");
     setDiagnosticResult(null);
     stopCamera();
@@ -341,7 +532,10 @@ function App() {
             // Soil moisture decreases slightly unless pump is active
             drift = controls.pump.checked ? 1.5 : -0.2;
           } else if (key === "light") {
-            drift = (Math.random() - 0.5) * 30; // Brightness variations
+            // Light level drifts down naturally unless grow light system is active
+            drift = controls.growLight.checked 
+              ? 120 
+              : -20 + (Math.random() - 0.5) * 10;
           }
 
           let newValue = Number((s.value + drift).toFixed(key === "temp" ? 1 : 0));
@@ -376,7 +570,7 @@ function App() {
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [simulationActive, controls.pump.checked]);
+  }, [simulationActive, controls.pump.checked, controls.growLight.checked]);
 
   // Overall system warning/alert rollup
   const activeAlerts = Object.values(sensors).filter((s) => s.status === "alert");
@@ -395,6 +589,12 @@ function App() {
 
   // Toggling controls
   const handleToggle = (key: keyof typeof controls) => {
+    let modeOverridden = false;
+    if (autoMode) {
+      setAutoMode(false);
+      modeOverridden = true;
+    }
+
     setControls((prev) => {
       const isChecked = !prev[key].checked;
       let text = isChecked ? "Running" : "Off";
@@ -403,8 +603,17 @@ function App() {
         text = isChecked ? "Running (Speed: Medium)" : "Off";
       } else if (key === "pump") {
         text = isChecked ? "Watering Active" : "Off (Last run: Just now)";
+      } else if (key === "growLight") {
+        text = isChecked ? "ON (Full Spectrum)" : "Off";
       } else if (key === "shade") {
         text = isChecked ? "Deployed (100%)" : "Retracted";
+      }
+
+      // Log actions
+      const deviceName = prev[key].name;
+      logControlAction(deviceName, isChecked ? "ON" : "OFF", "Manual Override");
+      if (modeOverridden) {
+        logControlAction("System", "MODE", "Switched to Manual Mode (Override)");
       }
 
       return {
@@ -476,12 +685,41 @@ function App() {
           <span className="logo-text">PlantSense Greenhouse</span>
         </div>
         <div className="header-meta">
+          {/* Data Source Toggle: Demo / Live */}
+          <div className="data-source-toggle">
+            <button
+              className={`data-source-button ${dataSource === 'demo' ? 'active' : ''}`}
+              onClick={() => setDataSource('demo')}
+              aria-pressed={dataSource === 'demo'}
+            >
+              🎭 Demo
+            </button>
+            <button
+              className={`data-source-button ${dataSource === 'live' ? 'active' : ''}`}
+              onClick={() => setDataSource('live')}
+              aria-pressed={dataSource === 'live'}
+            >
+              📡 Live
+            </button>
+          </div>
           <span className="refresh-label">
-            Last update: {lastUpdated.toLocaleTimeString()}
+            {dataSource === 'live' && liveSensor.lastUpdated
+              ? `Last update: ${liveSensor.lastUpdated.toLocaleTimeString()}`
+              : `Last update: ${lastUpdated.toLocaleTimeString()}`
+            }
           </span>
           <div className="system-status-indicator">
-            <span className={`status-dot ${systemStatus}`} />
-            <span>{systemStatusText}</span>
+            {dataSource === 'live' ? (
+              <>
+                <span className={`status-dot ${liveSensor.isStale ? 'alert' : 'normal'}`} />
+                <span>{liveSensor.isStale ? 'Sensor Offline' : liveSensor.isLoading ? 'Connecting...' : 'Live Data'}</span>
+              </>
+            ) : (
+              <>
+                <span className={`status-dot ${systemStatus}`} />
+                <span>{systemStatusText}</span>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -501,6 +739,58 @@ function App() {
       <main className="dashboard-layout">
         {/* Left Side: Telemetries */}
         <section className="dashboard-main">
+          {/* === โหมด Live: แสดง SensorCard จาก D1 API === */}
+          {dataSource === 'live' ? (
+            <>
+              <div className="sensor-grid">
+                <SensorCard
+                  label="Temperature"
+                  value={liveSensor.data?.temperature ?? null}
+                  unit="°C"
+                  icon={<TempIcon />}
+                  isLoading={liveSensor.isLoading}
+                  error={liveSensor.error}
+                  isStale={liveSensor.isStale}
+                  secondsSinceUpdate={liveSensor.secondsSinceUpdate}
+                />
+                <SensorCard
+                  label="Humidity"
+                  value={liveSensor.data?.humidity ?? null}
+                  unit="%"
+                  icon={<DropletIcon />}
+                  isLoading={liveSensor.isLoading}
+                  error={liveSensor.error}
+                  isStale={liveSensor.isStale}
+                  secondsSinceUpdate={liveSensor.secondsSinceUpdate}
+                />
+                <SensorCard
+                  label="Soil Moisture"
+                  value={liveSensor.data?.soil_moisture ?? null}
+                  unit="%"
+                  icon={<DropletIcon />}
+                  isLoading={liveSensor.isLoading}
+                  error={liveSensor.error}
+                  isStale={liveSensor.isStale}
+                  secondsSinceUpdate={liveSensor.secondsSinceUpdate}
+                />
+                <SensorCard
+                  label="Light Level"
+                  value={liveSensor.data?.light_level ?? null}
+                  unit="Lux"
+                  icon={<SunIcon />}
+                  isLoading={liveSensor.isLoading}
+                  error={liveSensor.error}
+                  isStale={liveSensor.isStale}
+                  secondsSinceUpdate={liveSensor.secondsSinceUpdate}
+                />
+              </div>
+
+              {/* กราฟย้อนหลัง — แสดงเฉพาะโหมด Live */}
+              <SensorHistoryChart enabled={dataSource === 'live'} />
+            </>
+          ) : (
+            /* === โหมด Demo: แสดง mock sensor cards เดิม === */
+            <>
           <div className="sensor-grid">
             {Object.values(sensors).map((sensor) => {
               const Icon = sensor.icon;
@@ -601,6 +891,8 @@ function App() {
               </div>
             </div>
           )}
+            </>
+          )}
 
           {/* AI Diagnostics Panel */}
           <div className="diagnostics-panel" style={{ marginTop: "var(--spacing-lg)" }}>
@@ -609,13 +901,54 @@ function App() {
                 <LeafIcon />
                 AI Crop Disease Diagnostics
               </span>
-              <span className="status-badge normal">AI-Powered</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                {/* Auto Capture Toggle */}
+                <div className="auto-capture-toggle">
+                  <TimerIcon />
+                  <span className="control-name" style={{ fontSize: "0.8125rem" }}>Auto Capture</span>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={autoCaptureEnabled}
+                      onChange={() => {
+                        if (!autoCaptureEnabled && !cameraActive) {
+                          // ถ้ายังไม่เปิดกล้อง → แจ้งเตือน
+                          alert("Please start the camera first before enabling Auto Capture.");
+                          return;
+                        }
+                        setAutoCaptureEnabled(!autoCaptureEnabled);
+                      }}
+                      aria-label="Toggle auto capture"
+                    />
+                    <span className="toggle-slider" />
+                  </label>
+                </div>
+                <span className="status-badge normal">AI-Powered</span>
+              </div>
             </div>
+
+            {/* Auto Capture Countdown Bar */}
+            {autoCaptureActive && (
+              <div className="auto-capture-bar">
+                <TimerIcon />
+                <span className="auto-capture-label">Next capture in</span>
+                <span className="countdown-display">{formatCountdown(autoCaptureRemaining)}</span>
+                <div className="countdown-progress">
+                  <div
+                    className="countdown-progress-fill"
+                    style={{
+                      width: `${((AUTO_CAPTURE_INTERVAL_MS / 1000 - autoCaptureRemaining) / (AUTO_CAPTURE_INTERVAL_MS / 1000)) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
             
             <div className="diagnostics-layout">
               {/* Left Column: Viewport */}
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 <div className="camera-viewport">
+                  {/* กล้องเปิดอยู่ → แสดง live feed เสมอ (ไม่สลับไป captured image) */}
                   {cameraActive ? (
                     <video
                       id="camera-stream"
@@ -644,10 +977,27 @@ function App() {
                   )}
                 </div>
 
+                {/* Thumbnail Gallery — แสดงรูปที่ถ่ายไว้ */}
+                {capturedImages.length > 0 && (
+                  <div className="capture-gallery">
+                    {capturedImages.map((img, i) => (
+                      <button
+                        key={i}
+                        className={`capture-thumbnail ${selectedImageIndex === i ? "selected" : ""}`}
+                        onClick={() => selectCapturedImage(i)}
+                        aria-label={`Select captured image ${i + 1}`}
+                      >
+                        <img src={img} alt={`Capture ${i + 1}`} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <div className="camera-actions">
-                  {!cameraActive && !capturedImage && (
+                  {/* กล้องปิดอยู่ + ไม่มีรูปใน gallery */}
+                  {!cameraActive && capturedImages.length === 0 && (
                     <>
-                      <button className="action-button" onClick={startCamera} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <button className="action-button" onClick={() => startCamera()} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <CameraIcon /> Start Camera
                       </button>
                       <button className="action-button" onClick={() => fileInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
@@ -656,17 +1006,34 @@ function App() {
                     </>
                   )}
 
+                  {/* กล้องเปิดอยู่ → แสดงปุ่มถ่าย + สลับกล้อง + ปิดกล้อง */}
                   {cameraActive && (
                     <>
-                      <button className="action-button" onClick={capturePhoto} style={{ backgroundColor: "var(--color-status-normal)" }}>
-                        Capture Photo
+                      <button className="action-button" onClick={capturePhoto} style={{ backgroundColor: "var(--color-status-normal)", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <CameraIcon /> Capture
                       </button>
-                      <button className="action-button" onClick={stopCamera} style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
-                        Cancel
+                      <button className="action-button" onClick={switchCamera} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
+                        <RefreshCwIcon /> Switch Camera
+                      </button>
+                      <button className="action-button" onClick={stopCamera} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-status-alert)" }}>
+                        <XIcon /> Close
                       </button>
                     </>
                   )}
 
+                  {/* กล้องปิดอยู่ + มีรูปใน gallery → แสดงปุ่มเปิดกล้อง + อัปโหลด + ล้าง */}
+                  {!cameraActive && capturedImages.length > 0 && (
+                    <>
+                      <button className="action-button" onClick={() => startCamera()} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <CameraIcon /> Start Camera
+                      </button>
+                      <button className="action-button" onClick={() => fileInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
+                        <UploadIcon /> Upload
+                      </button>
+                    </>
+                  )}
+
+                  {/* รูปที่เลือกอยู่ + ไม่ได้กำลัง scan → แสดงปุ่ม scan + ล้าง */}
                   {capturedImage && scanState !== "scanning" && (
                     <>
                       {scanState === "idle" && (
@@ -779,6 +1146,34 @@ function App() {
 
         {/* Right Side: Device Controls & System Actions */}
         <section className="controls-sidebar">
+          <span className="sidebar-title">System Mode</span>
+          <div className="sidebar-card" style={{ display: "flex", gap: "8px", padding: "6px", marginBottom: "var(--spacing-md)" }}>
+            <button
+              className={`action-button ${autoMode ? "" : "btn-normal"}`}
+              style={{ flex: 1, padding: "8px", fontSize: "0.875rem", transition: "all 0.15s ease-out", border: autoMode ? "none" : "1px solid var(--color-border)", backgroundColor: autoMode ? "var(--color-primary)" : "transparent", color: autoMode ? "var(--color-neutral-bg)" : "var(--color-muted-ink)" }}
+              onClick={() => {
+                if (!autoMode) {
+                  setAutoMode(true);
+                  logControlAction("System", "MODE", "Switch to Auto Mode");
+                }
+              }}
+            >
+              Auto Mode
+            </button>
+            <button
+              className={`action-button ${!autoMode ? "" : "btn-normal"}`}
+              style={{ flex: 1, padding: "8px", fontSize: "0.875rem", transition: "all 0.15s ease-out", border: !autoMode ? "none" : "1px solid var(--color-border)", backgroundColor: !autoMode ? "var(--color-primary)" : "transparent", color: !autoMode ? "var(--color-neutral-bg)" : "var(--color-muted-ink)" }}
+              onClick={() => {
+                if (autoMode) {
+                  setAutoMode(false);
+                  logControlAction("System", "MODE", "Switch to Manual Mode");
+                }
+              }}
+            >
+              Manual Mode
+            </button>
+          </div>
+
           <span className="sidebar-title">Greenhouse Controls</span>
           <div className="sidebar-card">
             {Object.entries(controls).map(([key, value]) => (
@@ -840,6 +1235,43 @@ function App() {
                 Reset to Normal
               </button>
             </div>
+          </div>
+
+          <span className="sidebar-title" style={{ marginTop: "var(--spacing-md)", display: "block" }}>Control History Logs</span>
+          <div className="sidebar-card" style={{ maxHeight: "250px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", padding: "12px" }}>
+            {controlLogs.length === 0 ? (
+              <span style={{ fontSize: "0.75rem", color: "var(--color-muted-ink)", textAlign: "center", display: "block", padding: "12px" }}>
+                No control events recorded.
+              </span>
+            ) : (
+              controlLogs.map((log) => (
+                <div key={log.id} style={{ display: "flex", flexDirection: "column", gap: "2px", borderBottom: "1px solid var(--color-border)", paddingBottom: "6px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", color: "var(--color-muted-ink)" }}>
+                      {log.timestamp}
+                    </span>
+                    <span
+                      className={`status-badge ${
+                        log.action === "ON"
+                          ? "normal"
+                          : log.action === "OFF"
+                          ? "alert"
+                          : "warning"
+                      }`}
+                      style={{ fontSize: "0.625rem", padding: "2px 6px" }}
+                    >
+                      {log.action}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: "0.8125rem", fontWeight: "600", color: "var(--color-primary)" }}>
+                    {log.device}
+                  </span>
+                  <span style={{ fontSize: "0.75rem", color: "var(--color-muted-ink)" }}>
+                    {log.trigger}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </main>

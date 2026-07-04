@@ -1,0 +1,15 @@
+# SmartGreenhouse API — Cloudflare Workers + D1
+name = "smartgreenhouse-api"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+# D1 Database Binding
+# หมายเหตุ: เปลี่ยน database_id เป็น ID จริงของคุณเมื่อ deploy ขึ้น remote
+# สร้าง database ด้วย: npx wrangler d1 create smartgreenhouse-db
+[[d1_databases]]
+binding = "DB"
+database_name = "smartgreenhouse-db"
+database_id = "placeholder-change-me"
+
+[dev]
+port = 8787
