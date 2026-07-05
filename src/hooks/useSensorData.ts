@@ -106,10 +106,20 @@ export function useSensorData(options?: UseSensorDataOptions): UseSensorDataRetu
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
+    let isTimeout = false;
+    // ตั้งเวลา Timeout 8 วินาทีเพื่อ abort request หากเน็ตเวิร์กค้าง
+    const timeoutId = setTimeout(() => {
+      isTimeout = true;
+      controller.abort();
+    }, 8000);
+
     try {
       const response = await fetch(`${apiBaseUrl}/sensor-latest`, {
         signal: controller.signal,
       });
+
+      // ล้างค่า timeout เมื่อสำเร็จ
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         throw new Error(`API responded with status ${response.status}`);
@@ -133,12 +143,24 @@ export function useSensorData(options?: UseSensorDataOptions): UseSensorDataRetu
 
       setIsLoading(false);
     } catch (err) {
-      // ไม่นับ AbortError เป็น error (เกิดจากการ unmount)
+      // ล้างค่า timeout เมื่อเกิดข้อผิดพลาด
+      clearTimeout(timeoutId);
+
+      // ตรวจสอบว่าเป็นการยกเลิก (Abort) จากการ Unmount หรือจาก Timeout
       if (err instanceof DOMException && err.name === 'AbortError') {
-        return;
+        if (!isTimeout) {
+          // เกิดจากการปิดหน้าจอหรือ unmount -> ยกเลิกการทำงานเงียบๆ
+          return;
+        }
       }
 
-      const fetchError = err instanceof Error ? err : new Error('Unknown fetch error');
+      // แปลงข้อความแสดงข้อผิดพลาด (ถ้าหมดเวลาให้แสดงความหมายชัดเจน)
+      const fetchError = isTimeout
+        ? new Error('การเชื่อมต่อกับเซิร์ฟเวอร์หมดเวลา (Timeout 8 วินาที)')
+        : err instanceof Error
+        ? err
+        : new Error('Unknown fetch error');
+
       setError(fetchError);
       setIsLoading(false);
       consecutiveErrorsRef.current += 1;
