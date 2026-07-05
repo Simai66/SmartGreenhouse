@@ -4,99 +4,20 @@ import { SensorCard } from './components/SensorCard';
 import { SensorHistoryChart } from './components/SensorHistoryChart';
 import { useAutoCapture } from './hooks/useAutoCapture';
 import { useSensorData } from './hooks/useSensorData';
+import { useTranslation } from './hooks/useTranslation';
 import './App.css';
 
-// SVG Icons inline to avoid external dependencies and stay self-contained
-const LeafIcon = () => (
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.5 1 8.5C18 17 15 20 11 20z" />
-    <path d="M19 2c-2.26 4.33-5.27 7.14-8 10" />
-  </svg>
-);
-
-const TempIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
-  </svg>
-);
-
-const DropletIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z" />
-  </svg>
-);
-
-const SunIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v2" />
-    <path d="M12 20v2" />
-    <path d="M4.93 4.93l1.41 1.41" />
-    <path d="M17.66 17.66l1.41 1.41" />
-    <path d="M2 12h2" />
-    <path d="M20 12h2" />
-    <path d="M6.34 17.66l-1.41 1.41" />
-    <path d="M19.07 4.93l-1.41 1.41" />
-  </svg>
-);
-
-const AlertTriangleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-    <line x1="12" y1="9" x2="12" y2="13" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
-  </svg>
-);
-
-const CameraIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-    <circle cx="12" cy="13" r="4" />
-  </svg>
-);
-
-const UploadIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-    <polyline points="17 8 12 3 7 8" />
-    <line x1="12" y1="3" x2="12" y2="15" />
-  </svg>
-);
-
-const TrashIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-  </svg>
-);
-
-// ไอคอนสลับกล้อง (หน้า/หลัง)
-const RefreshCwIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10" />
-    <polyline points="1 20 1 14 7 14" />
-    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-  </svg>
-);
-
-// ไอคอนปิด (X)
-const XIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-
-// ไอคอนนาฬิกา/จับเวลา สำหรับ Auto Capture
-const TimerIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="13" r="8" />
-    <path d="M12 9v4l2 2" />
-    <path d="M5 3L2 6" />
-    <path d="M22 6l-3-3" />
-    <line x1="12" y1="1" x2="12" y2="3" />
-  </svg>
-);
+// SVG Icons imported from Icons component
+import {
+  LeafIcon,
+  TempIcon,
+  DropletIcon,
+  SunIcon,
+  AlertTriangleIcon,
+} from './components/Icons';
+import { useCameraStream } from './hooks/useCameraStream';
+import { ControlsSidebar } from './components/ControlsSidebar';
+import { DiagnosticsPanel } from './components/DiagnosticsPanel';
 
 type Status = "normal" | "warning" | "alert";
 
@@ -112,7 +33,8 @@ interface ControlLog {
   timestamp: string;
   device: string;
   action: "ON" | "OFF" | "MODE";
-  trigger: string;
+  triggerKey: string;
+  triggerParams?: Record<string, string | number>;
 }
 
 interface SensorData {
@@ -131,6 +53,16 @@ interface SensorData {
 }
 
 function App() {
+  const { t, lang, changeLanguage } = useTranslation();
+
+  // State to track daily min and max for live sensors dynamically
+  const [liveDailyMinMax, setLiveDailyMinMax] = useState<Record<string, { min: number | null; max: number | null }>>({
+    temp: { min: null, max: null },
+    humidity: { min: null, max: null },
+    moisture: { min: null, max: null },
+    light: { min: null, max: null },
+  });
+
   // 1. Core Sensor Telemetries
   const [sensors, setSensors] = useState<Record<string, SensorData>>({
     temp: {
@@ -210,6 +142,33 @@ function App() {
   // --- Custom Hook: ดึงข้อมูลเซนเซอร์จาก API (ทำงานเฉพาะโหมด Live) ---
   const liveSensor = useSensorData({ enabled: dataSource === 'live' });
 
+  // Update liveDailyMinMax based on new live data
+  useEffect(() => {
+    if (dataSource === 'live' && liveSensor.data) {
+      setLiveDailyMinMax((prev) => {
+        const { temperature, humidity, soil_moisture, light_level } = liveSensor.data!;
+        return {
+          temp: {
+            min: prev.temp.min === null ? temperature : Math.min(prev.temp.min, temperature),
+            max: prev.temp.max === null ? temperature : Math.max(prev.temp.max, temperature),
+          },
+          humidity: {
+            min: prev.humidity.min === null ? humidity : Math.min(prev.humidity.min, humidity),
+            max: prev.humidity.max === null ? humidity : Math.max(prev.humidity.max, humidity),
+          },
+          moisture: {
+            min: prev.moisture.min === null ? soil_moisture : Math.min(prev.moisture.min, soil_moisture),
+            max: prev.moisture.max === null ? soil_moisture : Math.max(prev.moisture.max, soil_moisture),
+          },
+          light: {
+            min: prev.light.min === null ? light_level : Math.min(prev.light.min, light_level),
+            max: prev.light.max === null ? light_level : Math.max(prev.light.max, light_level),
+          },
+        };
+      });
+    }
+  }, [dataSource, liveSensor.data]);
+
   // 4. Automated Control System States & Log Helper
   const [autoMode, setAutoMode] = useState<boolean>(true);
   const [controlLogs, setControlLogs] = useState<ControlLog[]>([
@@ -218,59 +177,63 @@ function App() {
       timestamp: new Date().toLocaleTimeString(),
       device: "System",
       action: "MODE",
-      trigger: "System Initialized in Auto Mode"
+      triggerKey: "log_mode_auto"
     }
   ]);
 
-  const logControlAction = (device: string, action: "ON" | "OFF" | "MODE", trigger: string) => {
+  const logControlAction = (device: string, action: "ON" | "OFF" | "MODE", triggerKey: string, triggerParams?: Record<string, string | number>) => {
     const timestamp = new Date().toLocaleTimeString();
     const newLog: ControlLog = {
       id: Math.random().toString(36).substr(2, 9),
       timestamp,
       device,
       action,
-      trigger
+      triggerKey,
+      triggerParams,
     };
     setControlLogs((prev) => [newLog, ...prev].slice(0, 10)); // Keep last 10 logs
   };
 
+  const handleSetAutoMode = (val: boolean) => {
+    setAutoMode(val);
+    logControlAction("System", "MODE", val ? "log_mode_auto" : "log_mode_manual");
+  };
+
   // 4. AI Crop Disease Diagnostics States
-  const [cameraActive, setCameraActive] = useState<boolean>(false);
-  // เปลี่ยนจากเก็บรูปเดียวเป็น gallery array — รองรับถ่ายต่อเนื่อง
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
   // index ของรูปที่เลือกจาก gallery เพื่อนำไป scan
   const [selectedImageIndex, setSelectedImageIndex] = useState<number>(-1);
   const [scanState, setScanState] = useState<"idle" | "scanning" | "completed">("idle");
   const [diagnosticResult, setDiagnosticResult] = useState<DiagnosticResult | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  // สลับกล้องหน้า/หลัง
-  const [facingMode, setFacingMode] = useState<"user" | "environment">("environment");
   // เปิด/ปิดโหมดถ่ายอัตโนมัติ
   const [autoCaptureEnabled, setAutoCaptureEnabled] = useState<boolean>(false);
   
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const {
+    cameraActive,
+    stream,
+    videoRef,
+    setVideoRef,
+    isSimulated,
+    startCamera,
+    stopCamera,
+    switchCamera
+  } = useCameraStream({
+    onStart: () => {
+      setScanState("idle");
+      setDiagnosticResult(null);
+      setSelectedImageIndex(-1);
+    },
+    onStop: () => {
+      setAutoCaptureEnabled(false);
+    }
+  });
 
   // คำนวณ capturedImage จาก gallery + selectedIndex สำหรับ backward compat
   const capturedImage = selectedImageIndex >= 0 && selectedImageIndex < capturedImages.length
     ? capturedImages[selectedImageIndex]
     : null;
-
-  // Auto-mount video stream when camera active
-  useEffect(() => {
-    if (cameraActive && stream && videoRef.current) {
-      videoRef.current.srcObject = stream;
-    }
-  }, [cameraActive, stream]);
-
-  // Cleanup stream on unmount
-  useEffect(() => {
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, [stream]);
 
   // Automated Control Logic Trigger
   useEffect(() => {
@@ -290,12 +253,12 @@ function App() {
       newPumpChecked = true;
       newPumpText = "Watering Active (Auto)";
       updated = true;
-      logControlAction("Water Pump", "ON", `Auto: Moisture ${moistureVal}% < 35%`);
+      logControlAction("Water Pump", "ON", "auto_moisture_low", { value: moistureVal });
     } else if (moistureVal > 75 && controls.pump.checked) {
       newPumpChecked = false;
       newPumpText = "Off";
       updated = true;
-      logControlAction("Water Pump", "OFF", `Auto: Moisture ${moistureVal}% > 75%`);
+      logControlAction("Water Pump", "OFF", "auto_moisture_high", { value: moistureVal });
     }
 
     // Grow Light automation
@@ -303,12 +266,12 @@ function App() {
       newLightChecked = true;
       newLightText = "ON (Full Spectrum)";
       updated = true;
-      logControlAction("Grow Light System", "ON", `Auto: Light ${lightVal} Lux < 300 Lux`);
+      logControlAction("Grow Light System", "ON", "auto_light_low", { value: lightVal });
     } else if (lightVal > 1200 && controls.growLight.checked) {
       newLightChecked = false;
       newLightText = "Off";
       updated = true;
-      logControlAction("Grow Light System", "OFF", `Auto: Light ${lightVal} Lux > 1200 Lux`);
+      logControlAction("Grow Light System", "OFF", "auto_light_high", { value: lightVal });
     }
 
     if (updated) {
@@ -328,76 +291,96 @@ function App() {
     }
   }, [autoMode, sensors.moisture.value, sensors.light.value, controls.pump.checked, controls.pump.statusText, controls.growLight.checked, controls.growLight.statusText]);
 
-  // เปิดกล้อง — ใช้ facingMode ปัจจุบัน
-  const startCamera = async (requestedFacingMode?: "user" | "environment") => {
-    const mode = requestedFacingMode || facingMode;
-    // รีเซ็ตเฉพาะ scan state ไม่ลบ gallery
-    setScanState("idle");
-    setDiagnosticResult(null);
-    setSelectedImageIndex(-1);
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: mode }
-      });
-      setStream(mediaStream);
-      setCameraActive(true);
-    } catch (err) {
-      console.error("Camera access error:", err);
-      alert("Cannot access camera. Please upload an image file instead.");
-    }
-  };
-
-  // ปิดกล้อง — ปิด stream + reset state
-  const stopCamera = () => {
-    // ปิด auto capture ด้วยเมื่อปิดกล้อง
-    setAutoCaptureEnabled(false);
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    setStream(null);
-    setCameraActive(false);
-  };
-
-  // สลับกล้องหน้า/หลัง — ปิด stream เก่า แล้วเปิดใหม่ด้วย facingMode ตรงข้าม
-  const switchCamera = async () => {
-    const newMode = facingMode === "environment" ? "user" : "environment";
-    setFacingMode(newMode);
-    // ปิด stream เก่า
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    // เปิดใหม่ด้วย facingMode ใหม่
-    await startCamera(newMode);
-  };
+  // Camera stream operations managed by useCameraStream hook
 
   // ถ่ายรูปจาก video stream — กล้องยังเปิดค้างอยู่ ไม่ปิด!
   const capturePhoto = useCallback(() => {
     const video = videoRef.current;
-    if (video) {
+
+    // หากเป็นโหมดจำลอง (Simulated Mode) หรือไม่มีวิดีโอตัวจริง ให้วาดรูปใบไม้เดโม่ขึ้นมาแทน
+    if (isSimulated || !video) {
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
+      canvas.width = 640;
+      canvas.height = 480;
       const ctx = canvas.getContext("2d");
       if (ctx) {
-        // Draw mirrored preview
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // วาดภาพพื้นหลังจำลอง
+        const grad = ctx.createLinearGradient(0, 0, 0, 480);
+        grad.addColorStop(0, "#065f46"); // เขียวเข้ม
+        grad.addColorStop(1, "#022c22"); // เขียวมืด
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 640, 480);
+
+        // วาดรูปใบไม้สีเขียว
+        ctx.beginPath();
+        ctx.moveTo(320, 400);
+        ctx.quadraticCurveTo(150, 240, 320, 80);
+        ctx.quadraticCurveTo(490, 240, 320, 400);
+        ctx.fillStyle = "#10b981"; // Emerald green leaf
+        ctx.fill();
+        ctx.strokeStyle = "#047857";
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        // วาดเส้นลายใบ
+        ctx.beginPath();
+        ctx.moveTo(320, 400);
+        ctx.lineTo(320, 80);
+        ctx.strokeStyle = "#047857";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // กิ่งก้านใบย่อย
+        for (let y = 140; y < 380; y += 40) {
+          ctx.beginPath();
+          ctx.moveTo(320, y);
+          ctx.lineTo(320 - (y - 80) * 0.3, y - 20);
+          ctx.moveTo(320, y);
+          ctx.lineTo(320 + (y - 80) * 0.3, y - 20);
+          ctx.stroke();
+        }
+
+        // เขียนข้อความทับลงไป
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 16px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("SIMULATED LEAF SAMPLE", 320, 440);
+
         const dataUrl = canvas.toDataURL("image/png");
-        // เก็บรูปเข้า gallery (สูงสุด 10 รูป, ลบรูปเก่าสุดออก)
         setCapturedImages((prev) => {
           const updated = [dataUrl, ...prev].slice(0, 10);
           return updated;
         });
-        // เลือกรูปล่าสุดเป็นตัวที่ active
         setSelectedImageIndex(0);
-        // รีเซ็ต scan state สำหรับรูปใหม่
         setScanState("idle");
         setDiagnosticResult(null);
-        // *** ไม่เรียก stopCamera() — กล้องเปิดค้าง ถ่ายต่อได้เลย ***
       }
+      return;
     }
-  }, []);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext("2d");
+    if (ctx) {
+      // Draw mirrored preview
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/png");
+      // เก็บรูปเข้า gallery (สูงสุด 10 รูป, ลบรูปเก่าสุดออก)
+      setCapturedImages((prev) => {
+        const updated = [dataUrl, ...prev].slice(0, 10);
+        return updated;
+      });
+      // เลือกรูปล่าสุดเป็นตัวที่ active
+      setSelectedImageIndex(0);
+      // รีเซ็ต scan state สำหรับรูปใหม่
+      setScanState("idle");
+      setDiagnosticResult(null);
+      // *** ไม่เรียก stopCamera() — กล้องเปิดค้าง ถ่ายต่อได้เลย ***
+    }
+  }, [isSimulated]);
 
   // เลือกรูปจาก gallery เพื่อนำไป scan
   const selectCapturedImage = (index: number) => {
@@ -428,49 +411,44 @@ function App() {
   // ใช้ useAutoCapture hook — ถ่ายรูปอัตโนมัติทุก 60 นาที
   // สำหรับ dev/testing: เปลี่ยนเป็น 10 * 1000 (10 วินาที) ได้
   const AUTO_CAPTURE_INTERVAL_MS = 60 * 60 * 1000; // 60 นาที
-  const { remainingSeconds: autoCaptureRemaining, isActive: autoCaptureActive } = useAutoCapture({
+  const { remainingSeconds: autoCaptureRemaining } = useAutoCapture({
     enabled: autoCaptureEnabled,
     intervalMs: AUTO_CAPTURE_INTERVAL_MS,
     onCapture: capturePhoto,
     isCameraReady: cameraActive && !!stream,
   });
 
-  // จัดรูปแบบ countdown เป็น MM:SS
-  const formatCountdown = (totalSeconds: number): string => {
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   // Mock results list for simulation
   const mockDiagnosticResults: DiagnosticResult[] = [
     {
-      disease: "Tomato Leaf Mold (Passalora fulva)",
+      disease: "disease_tomato",
       confidence: 94,
       status: "alert",
       recommendations: [
-        "Increase ventilation fan speed (Turn Ventilation Fan ON).",
-        "Apply organic copper-based fungicide to infected leaves.",
-        "Avoid overhead irrigation to keep foliage dry."
+        "rec_tomato_1",
+        "rec_tomato_2",
+        "rec_tomato_3"
       ]
     },
     {
-      disease: "Spider Mite Infestation (Tetranychidae)",
+      disease: "disease_mite",
       confidence: 86,
       status: "warning",
       recommendations: [
-        "Spray lower leaf surfaces with neem oil or insecticidal soap.",
-        "Introduce predatory mites (biological control agent).",
-        "Prune and safely destroy heavily infested leaves."
+        "rec_mite_1",
+        "rec_mite_2",
+        "rec_mite_3"
       ]
     },
     {
-      disease: "Healthy Leaf - No Pathology Detected",
+      disease: "disease_healthy",
       confidence: 98,
       status: "normal",
       recommendations: [
-        "Continue maintaining current telemetry safety ranges.",
-        "Prune lower branches occasionally to maintain optimal airflow."
+        "rec_healthy_1",
+        "rec_healthy_2"
       ]
     }
   ];
@@ -611,9 +589,9 @@ function App() {
 
       // Log actions
       const deviceName = prev[key].name;
-      logControlAction(deviceName, isChecked ? "ON" : "OFF", "Manual Override");
+      logControlAction(deviceName, isChecked ? "ON" : "OFF", "manual_override");
       if (modeOverridden) {
-        logControlAction("System", "MODE", "Switched to Manual Mode (Override)");
+        logControlAction("System", "MODE", "log_mode_manual");
       }
 
       return {
@@ -676,13 +654,88 @@ function App() {
     });
   };
 
+  // Get active sensor details dynamically based on dataSource
+  const activeSensorDetails = (() => {
+    if (!selectedSensor) return null;
+
+    if (dataSource === 'demo') {
+      const s = sensors[selectedSensor];
+      if (!s) return null;
+      
+      const translatedStatusText = (() => {
+        if (s.statusText === "Under Threshold") return t('under_threshold');
+        if (s.statusText === "Over Threshold") return t('over_threshold');
+        if (s.statusText === "Approaching Limit") return t('approaching_limit');
+        return t('stable');
+      })();
+
+      return {
+        name: t(s.id),
+        value: s.value,
+        unit: s.unit,
+        dailyMin: s.dailyMin,
+        dailyMax: s.dailyMax,
+        status: s.status,
+        statusText: translatedStatusText,
+        safetyText: s.status === "normal" ? t('normal_bounds') : t('needs_attention'),
+      };
+    } else {
+      const keyMap: Record<string, { nameKey: string; unit: string; minTh: number; maxTh: number; val: number | null }> = {
+        temp: { nameKey: 'temp', unit: '°C', minTh: 18.0, maxTh: 32.0, val: liveSensor.data?.temperature ?? null },
+        humidity: { nameKey: 'humidity', unit: '%', minTh: 50, maxTh: 85, val: liveSensor.data?.humidity ?? null },
+        moisture: { nameKey: 'moisture', unit: '%', minTh: 35, maxTh: 75, val: liveSensor.data?.soil_moisture ?? null },
+        light: { nameKey: 'light', unit: 'Lux', minTh: 300, maxTh: 1200, val: liveSensor.data?.light_level ?? null },
+      };
+
+      const info = keyMap[selectedSensor];
+      if (!info) return null;
+
+      let status: Status = 'normal';
+      let statusText = t('loading');
+      if (info.val !== null) {
+        const resolved = determineStatus(selectedSensor, info.val, info.minTh, info.maxTh);
+        status = resolved.status;
+        
+        const translatedStatusText = (() => {
+          if (resolved.text === "Under Threshold") return t('under_threshold');
+          if (resolved.text === "Over Threshold") return t('over_threshold');
+          if (resolved.text === "Approaching Limit") return t('approaching_limit');
+          return t('stable');
+        })();
+        statusText = translatedStatusText;
+      }
+
+      const liveMin = liveDailyMinMax[selectedSensor].min;
+      const liveMax = liveDailyMinMax[selectedSensor].max;
+
+      return {
+        name: t(info.nameKey),
+        value: info.val,
+        unit: info.unit,
+        dailyMin: liveMin !== null ? liveMin : '--',
+        dailyMax: liveMax !== null ? liveMax : '--',
+        status,
+        statusText,
+        safetyText: status === "normal" ? t('normal_bounds') : t('needs_attention'),
+      };
+    }
+  })();
+
+  const formattedControlLogs = controlLogs.map((log) => ({
+    id: log.id,
+    timestamp: log.timestamp,
+    device: log.device,
+    action: log.action,
+    trigger: t(log.triggerKey, log.triggerParams),
+  }));
+
   return (
     <div className="dashboard-container">
       {/* 1. Navbar */}
       <header className="dashboard-header">
         <div className="header-logo">
           <LeafIcon />
-          <span className="logo-text">PlantSense Greenhouse</span>
+          <span className="logo-text">{t('smart_greenhouse')}</span>
         </div>
         <div className="header-meta">
           {/* Data Source Toggle: Demo / Live */}
@@ -692,27 +745,36 @@ function App() {
               onClick={() => setDataSource('demo')}
               aria-pressed={dataSource === 'demo'}
             >
-              🎭 Demo
+              {t('demo_mode')}
             </button>
             <button
               className={`data-source-button ${dataSource === 'live' ? 'active' : ''}`}
               onClick={() => setDataSource('live')}
               aria-pressed={dataSource === 'live'}
             >
-              📡 Live
+              {t('live_mode')}
             </button>
           </div>
+          {/* Language Toggle */}
+          <button
+            className="data-source-button language-toggle-btn"
+            onClick={() => changeLanguage(lang === 'th' ? 'en' : 'th')}
+            aria-label="Toggle language"
+            style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            🌐 {lang === 'th' ? 'EN' : 'TH'}
+          </button>
           <span className="refresh-label">
             {dataSource === 'live' && liveSensor.lastUpdated
-              ? `Last update: ${liveSensor.lastUpdated.toLocaleTimeString()}`
-              : `Last update: ${lastUpdated.toLocaleTimeString()}`
+              ? t('last_update', { time: liveSensor.lastUpdated.toLocaleTimeString() })
+              : t('last_update', { time: lastUpdated.toLocaleTimeString() })
             }
           </span>
           <div className="system-status-indicator">
             {dataSource === 'live' ? (
               <>
                 <span className={`status-dot ${liveSensor.isStale ? 'alert' : 'normal'}`} />
-                <span>{liveSensor.isStale ? 'Sensor Offline' : liveSensor.isLoading ? 'Connecting...' : 'Live Data'}</span>
+                <span>{liveSensor.isStale ? t('sensor_offline') : liveSensor.isLoading ? t('connecting') : t('live_data')}</span>
               </>
             ) : (
               <>
@@ -729,8 +791,8 @@ function App() {
         <div className="alert-banner">
           <AlertTriangleIcon />
           <div>
-            <strong>Attention Required:</strong>{" "}
-            {activeAlerts.map((a) => `${a.name} is critically out of bounds (${a.value}${a.unit}).`).join(" ")}
+            <strong>{t('attention_required')}</strong>{" "}
+            {activeAlerts.map((a) => t('out_of_bounds', { name: t(a.id), value: a.value, unit: a.unit })).join(" ")}
           </div>
         </div>
       )}
@@ -752,6 +814,8 @@ function App() {
                   error={liveSensor.error}
                   isStale={liveSensor.isStale}
                   secondsSinceUpdate={liveSensor.secondsSinceUpdate}
+                  isSelected={selectedSensor === "temp"}
+                  onClick={() => setSelectedSensor("temp")}
                 />
                 <SensorCard
                   label="Humidity"
@@ -762,6 +826,8 @@ function App() {
                   error={liveSensor.error}
                   isStale={liveSensor.isStale}
                   secondsSinceUpdate={liveSensor.secondsSinceUpdate}
+                  isSelected={selectedSensor === "humidity"}
+                  onClick={() => setSelectedSensor("humidity")}
                 />
                 <SensorCard
                   label="Soil Moisture"
@@ -772,6 +838,8 @@ function App() {
                   error={liveSensor.error}
                   isStale={liveSensor.isStale}
                   secondsSinceUpdate={liveSensor.secondsSinceUpdate}
+                  isSelected={selectedSensor === "moisture"}
+                  onClick={() => setSelectedSensor("moisture")}
                 />
                 <SensorCard
                   label="Light Level"
@@ -782,6 +850,8 @@ function App() {
                   error={liveSensor.error}
                   isStale={liveSensor.isStale}
                   secondsSinceUpdate={liveSensor.secondsSinceUpdate}
+                  isSelected={selectedSensor === "light"}
+                  onClick={() => setSelectedSensor("light")}
                 />
               </div>
 
@@ -808,10 +878,16 @@ function App() {
                   <div className="card-header">
                     <span className="sensor-title">
                       <Icon />
-                      {sensor.name}
+                      {t(sensor.id)}
                     </span>
                     <span className={`status-badge ${sensor.status}`}>
-                      {sensor.statusText}
+                      {(() => {
+                        if (sensor.statusText === "Stable" || sensor.statusText === "Adequate") return t('stable');
+                        if (sensor.statusText === "Under Threshold") return t('under_threshold');
+                        if (sensor.statusText === "Over Threshold") return t('over_threshold');
+                        if (sensor.statusText === "Approaching Limit") return t('approaching_limit');
+                        return sensor.statusText;
+                      })()}
                     </span>
                   </div>
                   <div className="sensor-value-container">
@@ -839,8 +915,8 @@ function App() {
                       />
                     </div>
                     <div className="sensor-limits">
-                      <span>Min Safe: {sensor.minThreshold}{sensor.unit}</span>
-                      <span>Max Safe: {sensor.maxThreshold}{sensor.unit}</span>
+                      <span>{t('min_safe')}{sensor.minThreshold}{sensor.unit}</span>
+                      <span>{t('max_safe')}{sensor.maxThreshold}{sensor.unit}</span>
                     </div>
                   </div>
                 </div>
@@ -849,43 +925,43 @@ function App() {
           </div>
 
           {/* Lower Detail Panel (Progressive Disclosure) */}
-          {selectedSensor && sensors[selectedSensor] && (
+          {activeSensorDetails && (
             <div className="details-panel">
               <div className="details-header">
                 <span className="details-title">
-                  {sensors[selectedSensor].name} Detailed Analytics
+                  {activeSensorDetails.name} {t('detailed_analytics')}
                 </span>
-                <span className={`status-badge ${sensors[selectedSensor].status}`}>
-                  {sensors[selectedSensor].statusText}
+                <span className={`status-badge ${activeSensorDetails.status}`}>
+                  {activeSensorDetails.statusText}
                 </span>
               </div>
               <div className="details-grid">
                 <div className="details-stat" style={{ "--i": 0 } as React.CSSProperties}>
-                  <span className="stat-label">Daily Minimum</span>
+                  <span className="stat-label">{t('daily_min')}</span>
                   <span className="stat-value">
-                    {sensors[selectedSensor].dailyMin}
-                    {sensors[selectedSensor].unit}
+                    {activeSensorDetails.dailyMin}
+                    {activeSensorDetails.unit}
                   </span>
                 </div>
                 <div className="details-stat" style={{ "--i": 1 } as React.CSSProperties}>
-                  <span className="stat-label">Daily Maximum</span>
+                  <span className="stat-label">{t('daily_max')}</span>
                   <span className="stat-value">
-                    {sensors[selectedSensor].dailyMax}
-                    {sensors[selectedSensor].unit}
+                    {activeSensorDetails.dailyMax}
+                    {activeSensorDetails.unit}
                   </span>
                 </div>
                 <div className="details-stat" style={{ "--i": 2 } as React.CSSProperties}>
-                  <span className="stat-label">Safety Status</span>
+                  <span className="stat-label">{t('safety_status')}</span>
                   <span className="stat-value" style={{ 
-                    color: sensors[selectedSensor].status === "alert" 
+                    color: activeSensorDetails.status === "alert" 
                       ? "var(--color-status-alert-strong)" 
-                      : sensors[selectedSensor].status === "warning"
+                      : activeSensorDetails.status === "warning"
                       ? "var(--color-status-warning-strong)"
                       : "var(--color-status-normal-strong)",
                     fontSize: "1.125rem",
                     fontWeight: 600
                   }}>
-                    {sensors[selectedSensor].status === "normal" ? "Normal Bounds" : "Needs Attention"}
+                    {activeSensorDetails.safetyText}
                   </span>
                 </div>
               </div>
@@ -895,385 +971,44 @@ function App() {
           )}
 
           {/* AI Diagnostics Panel */}
-          <div className="diagnostics-panel" style={{ marginTop: "var(--spacing-lg)" }}>
-            <div className="card-header">
-              <span className="details-title" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <LeafIcon />
-                AI Crop Disease Diagnostics
-              </span>
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                {/* Auto Capture Toggle */}
-                <div className="auto-capture-toggle">
-                  <TimerIcon />
-                  <span className="control-name" style={{ fontSize: "0.8125rem" }}>Auto Capture</span>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={autoCaptureEnabled}
-                      onChange={() => {
-                        if (!autoCaptureEnabled && !cameraActive) {
-                          // ถ้ายังไม่เปิดกล้อง → แจ้งเตือน
-                          alert("Please start the camera first before enabling Auto Capture.");
-                          return;
-                        }
-                        setAutoCaptureEnabled(!autoCaptureEnabled);
-                      }}
-                      aria-label="Toggle auto capture"
-                    />
-                    <span className="toggle-slider" />
-                  </label>
-                </div>
-                <span className="status-badge normal">AI-Powered</span>
-              </div>
-            </div>
-
-            {/* Auto Capture Countdown Bar */}
-            {autoCaptureActive && (
-              <div className="auto-capture-bar">
-                <TimerIcon />
-                <span className="auto-capture-label">Next capture in</span>
-                <span className="countdown-display">{formatCountdown(autoCaptureRemaining)}</span>
-                <div className="countdown-progress">
-                  <div
-                    className="countdown-progress-fill"
-                    style={{
-                      width: `${((AUTO_CAPTURE_INTERVAL_MS / 1000 - autoCaptureRemaining) / (AUTO_CAPTURE_INTERVAL_MS / 1000)) * 100}%`,
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-            
-            <div className="diagnostics-layout">
-              {/* Left Column: Viewport */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div className="camera-viewport">
-                  {/* กล้องเปิดอยู่ → แสดง live feed เสมอ (ไม่สลับไป captured image) */}
-                  {cameraActive ? (
-                    <video
-                      id="camera-stream"
-                      ref={videoRef}
-                      autoPlay
-                      playsInline
-                      className="camera-video"
-                    />
-                  ) : capturedImage ? (
-                    <img src={capturedImage} alt="Captured leaf" className="captured-image" />
-                  ) : (
-                    <div className="viewport-placeholder">
-                      <CameraIcon />
-                      <span style={{ fontSize: "0.875rem" }}>No image active</span>
-                      <span style={{ fontSize: "0.75rem", color: "var(--color-muted-ink)" }}>
-                        Start camera or upload a leaf image file
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Laser Scanner animation during scanning */}
-                  {scanState === "scanning" && (
-                    <div className="scanner-overlay">
-                      <div className="scanner-laser" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Thumbnail Gallery — แสดงรูปที่ถ่ายไว้ */}
-                {capturedImages.length > 0 && (
-                  <div className="capture-gallery">
-                    {capturedImages.map((img, i) => (
-                      <button
-                        key={i}
-                        className={`capture-thumbnail ${selectedImageIndex === i ? "selected" : ""}`}
-                        onClick={() => selectCapturedImage(i)}
-                        aria-label={`Select captured image ${i + 1}`}
-                      >
-                        <img src={img} alt={`Capture ${i + 1}`} />
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                <div className="camera-actions">
-                  {/* กล้องปิดอยู่ + ไม่มีรูปใน gallery */}
-                  {!cameraActive && capturedImages.length === 0 && (
-                    <>
-                      <button className="action-button" onClick={() => startCamera()} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <CameraIcon /> Start Camera
-                      </button>
-                      <button className="action-button" onClick={() => fileInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
-                        <UploadIcon /> Upload Photo
-                      </button>
-                    </>
-                  )}
-
-                  {/* กล้องเปิดอยู่ → แสดงปุ่มถ่าย + สลับกล้อง + ปิดกล้อง */}
-                  {cameraActive && (
-                    <>
-                      <button className="action-button" onClick={capturePhoto} style={{ backgroundColor: "var(--color-status-normal)", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <CameraIcon /> Capture
-                      </button>
-                      <button className="action-button" onClick={switchCamera} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
-                        <RefreshCwIcon /> Switch Camera
-                      </button>
-                      <button className="action-button" onClick={stopCamera} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-status-alert)" }}>
-                        <XIcon /> Close
-                      </button>
-                    </>
-                  )}
-
-                  {/* กล้องปิดอยู่ + มีรูปใน gallery → แสดงปุ่มเปิดกล้อง + อัปโหลด + ล้าง */}
-                  {!cameraActive && capturedImages.length > 0 && (
-                    <>
-                      <button className="action-button" onClick={() => startCamera()} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <CameraIcon /> Start Camera
-                      </button>
-                      <button className="action-button" onClick={() => fileInputRef.current?.click()} style={{ display: "flex", alignItems: "center", gap: "6px", backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-primary)" }}>
-                        <UploadIcon /> Upload
-                      </button>
-                    </>
-                  )}
-
-                  {/* รูปที่เลือกอยู่ + ไม่ได้กำลัง scan → แสดงปุ่ม scan + ล้าง */}
-                  {capturedImage && scanState !== "scanning" && (
-                    <>
-                      {scanState === "idle" && (
-                        <button className="action-button" onClick={runScan} style={{ backgroundColor: "var(--color-status-normal)" }}>
-                          Run Diagnostics
-                        </button>
-                      )}
-                      <button className="action-button btn-alert" onClick={resetDiagnostics} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <TrashIcon /> Clear / Reset
-                      </button>
-                    </>
-                  )}
-
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageUpload}
-                    accept="image/*"
-                    style={{ display: "none" }}
-                    aria-label="Upload leaf image"
-                  />
-                </div>
-              </div>
-
-              {/* Right Column: Diagnostic Results */}
-              <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                {scanState === "idle" && capturedImage && (
-                  <div style={{ textAlign: "center", padding: "20px", color: "var(--color-muted-ink)" }}>
-                    <span style={{ fontSize: "0.875rem", display: "block", marginBottom: "8px" }}>Image ready for analysis</span>
-                    <button className="action-button" onClick={runScan} style={{ width: "100%", maxWidth: "200px", margin: "0 auto" }}>
-                      Scan Leaf
-                    </button>
-                  </div>
-                )}
-
-                {scanState === "scanning" && (
-                  <div style={{ textAlign: "center", padding: "20px" }}>
-                    <span className="value-update-pulse" style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--color-status-normal)", display: "block", marginBottom: "8px" }}>
-                      Scanning Leaf Tissue...
-                    </span>
-                    <span style={{ fontSize: "0.875rem", color: "var(--color-muted-ink)" }}>
-                      AI is identifying cell pathologies and symptoms
-                    </span>
-                  </div>
-                )}
-
-                {scanState === "completed" && diagnosticResult && (
-                  <div className="diagnostics-results">
-                    <div className="results-header">
-                      <span className="results-title">Diagnostic Result</span>
-                      <span className={`status-badge ${diagnosticResult.status}`}>
-                        {diagnosticResult.status === "normal" ? "Healthy" : "Infected"}
-                      </span>
-                    </div>
-                    <div>
-                      <strong style={{ fontSize: "1.125rem", color: "var(--color-primary)", display: "block" }}>
-                        {diagnosticResult.disease}
-                      </strong>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "8px" }}>
-                        <span style={{ fontSize: "0.875rem", color: "var(--color-muted-ink)" }}>
-                          Confidence:
-                        </span>
-                        <strong style={{ fontSize: "0.875rem", color: "var(--color-primary)" }}>
-                          {diagnosticResult.confidence}%
-                        </strong>
-                      </div>
-                      <div className="confidence-bar-container">
-                        <div
-                          className="confidence-bar"
-                          style={{
-                            width: "100%",
-                            transform: `scaleX(${diagnosticResult.confidence / 100})`,
-                            transformOrigin: "left",
-                            backgroundColor:
-                              diagnosticResult.status === "alert"
-                                ? "var(--color-status-alert)"
-                                : diagnosticResult.status === "warning"
-                                ? "var(--color-status-warning)"
-                                : "var(--color-status-normal)",
-                          }}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div style={{ borderTop: "1px dashed var(--color-border)", paddingTop: "12px", marginTop: "4px" }}>
-                      <span className="stat-label" style={{ fontSize: "0.75rem", display: "block", marginBottom: "8px" }}>
-                        Recommended Action Plan:
-                      </span>
-                      <ul className="recommendations-list">
-                        {diagnosticResult.recommendations.map((rec, i) => (
-                          <li key={i}>{rec}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                )}
-
-                {scanState === "idle" && !capturedImage && (
-                  <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--color-muted-ink)" }}>
-                    <LeafIcon />
-                    <p style={{ fontSize: "0.875rem", marginTop: "12px" }}>
-                      Select a leaf image to test disease diagnostic capabilities
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+          <DiagnosticsPanel
+            cameraActive={cameraActive}
+            setVideoRef={setVideoRef}
+            isSimulated={isSimulated}
+            capturedImage={capturedImage}
+            capturedImages={capturedImages}
+            selectedImageIndex={selectedImageIndex}
+            selectCapturedImage={selectCapturedImage}
+            scanState={scanState}
+            diagnosticResult={diagnosticResult}
+            startCamera={startCamera}
+            stopCamera={stopCamera}
+            switchCamera={switchCamera}
+            capturePhoto={capturePhoto}
+            handleImageUpload={handleImageUpload}
+            fileInputRef={fileInputRef}
+            autoCaptureEnabled={autoCaptureEnabled}
+            setAutoCaptureEnabled={setAutoCaptureEnabled}
+            autoCaptureRemaining={autoCaptureRemaining}
+            runDiagnostics={runScan}
+            resetDiagnostics={resetDiagnostics}
+            t={t}
+            lang={lang}
+          />
         </section>
 
-        {/* Right Side: Device Controls & System Actions */}
-        <section className="controls-sidebar">
-          <span className="sidebar-title">System Mode</span>
-          <div className="sidebar-card" style={{ display: "flex", gap: "8px", padding: "6px", marginBottom: "var(--spacing-md)" }}>
-            <button
-              className={`action-button ${autoMode ? "" : "btn-normal"}`}
-              style={{ flex: 1, padding: "8px", fontSize: "0.875rem", transition: "all 0.15s ease-out", border: autoMode ? "none" : "1px solid var(--color-border)", backgroundColor: autoMode ? "var(--color-primary)" : "transparent", color: autoMode ? "var(--color-neutral-bg)" : "var(--color-muted-ink)" }}
-              onClick={() => {
-                if (!autoMode) {
-                  setAutoMode(true);
-                  logControlAction("System", "MODE", "Switch to Auto Mode");
-                }
-              }}
-            >
-              Auto Mode
-            </button>
-            <button
-              className={`action-button ${!autoMode ? "" : "btn-normal"}`}
-              style={{ flex: 1, padding: "8px", fontSize: "0.875rem", transition: "all 0.15s ease-out", border: !autoMode ? "none" : "1px solid var(--color-border)", backgroundColor: !autoMode ? "var(--color-primary)" : "transparent", color: !autoMode ? "var(--color-neutral-bg)" : "var(--color-muted-ink)" }}
-              onClick={() => {
-                if (autoMode) {
-                  setAutoMode(false);
-                  logControlAction("System", "MODE", "Switch to Manual Mode");
-                }
-              }}
-            >
-              Manual Mode
-            </button>
-          </div>
-
-          <span className="sidebar-title">Greenhouse Controls</span>
-          <div className="sidebar-card">
-            {Object.entries(controls).map(([key, value]) => (
-              <div className="control-item" key={key}>
-                <div className="control-info">
-                  <span className="control-name">{value.name}</span>
-                  <span className="control-status">{value.statusText}</span>
-                </div>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={value.checked}
-                    onChange={() => handleToggle(key as keyof typeof controls)}
-                    aria-label={`Toggle ${value.name}`}
-                  />
-                  <span className="toggle-slider" />
-                </label>
-              </div>
-            ))}
-          </div>
-
-          <span className="sidebar-title">Simulation Tools</span>
-          <div className="sidebar-card" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="control-name" style={{ fontSize: "0.875rem" }}>Live Telemetry</span>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={simulationActive}
-                  onChange={() => setSimulationActive(!simulationActive)}
-                  aria-label="Toggle simulation active"
-                />
-                <span className="toggle-slider" />
-              </label>
-            </div>
-            <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
-              <span className="control-status" style={{ marginBottom: "4px", display: "block" }}>
-                Trigger Anomaly States for Review:
-              </span>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                <button 
-                  className="action-button btn-alert" 
-                  onClick={() => triggerSimulationEvent("hot")}
-                >
-                  Hot Alert
-                </button>
-                <button 
-                  className="action-button btn-warning" 
-                  onClick={() => triggerSimulationEvent("dry")}
-                >
-                  Dry Alert
-                </button>
-              </div>
-              <button 
-                className="action-button btn-normal" 
-                style={{ width: "100%" }} 
-                onClick={() => triggerSimulationEvent("normal")}
-              >
-                Reset to Normal
-              </button>
-            </div>
-          </div>
-
-          <span className="sidebar-title" style={{ marginTop: "var(--spacing-md)", display: "block" }}>Control History Logs</span>
-          <div className="sidebar-card" style={{ maxHeight: "250px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", padding: "12px" }}>
-            {controlLogs.length === 0 ? (
-              <span style={{ fontSize: "0.75rem", color: "var(--color-muted-ink)", textAlign: "center", display: "block", padding: "12px" }}>
-                No control events recorded.
-              </span>
-            ) : (
-              controlLogs.map((log) => (
-                <div key={log.id} style={{ display: "flex", flexDirection: "column", gap: "2px", borderBottom: "1px solid var(--color-border)", paddingBottom: "6px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: "0.75rem", fontFamily: "var(--font-mono)", color: "var(--color-muted-ink)" }}>
-                      {log.timestamp}
-                    </span>
-                    <span
-                      className={`status-badge ${
-                        log.action === "ON"
-                          ? "normal"
-                          : log.action === "OFF"
-                          ? "alert"
-                          : "warning"
-                      }`}
-                      style={{ fontSize: "0.625rem", padding: "2px 6px" }}
-                    >
-                      {log.action}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: "0.8125rem", fontWeight: "600", color: "var(--color-primary)" }}>
-                    {log.device}
-                  </span>
-                  <span style={{ fontSize: "0.75rem", color: "var(--color-muted-ink)" }}>
-                    {log.trigger}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
+        <ControlsSidebar
+          autoMode={autoMode}
+          setAutoMode={handleSetAutoMode}
+          controls={controls}
+          handleToggle={(key) => handleToggle(key as any)}
+          simulationActive={simulationActive}
+          setSimulationActive={setSimulationActive}
+          controlLogs={formattedControlLogs}
+          triggerAnomaly={triggerSimulationEvent}
+          t={t}
+          lang={lang}
+        />
       </main>
     </div>
   );

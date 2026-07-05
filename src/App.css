@@ -24,7 +24,7 @@
 }
 
 .header-logo svg {
-  color: var(--color-status-normal);
+  color: var(--color-status-normal-strong);
 }
 
 .logo-text {
@@ -77,7 +77,7 @@
   color: var(--color-status-alert-strong);
   font-size: 0.875rem;
   font-weight: 500;
-  animation: slideDown 0.2s ease-out;
+  animation: slideDown 0.12s ease-out;
 }
 
 .alert-banner svg {
@@ -159,8 +159,8 @@
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 44px;
-  height: 24px;
+  width: 56px;
+  height: 44px; /* Ensure 44px touch height */
 }
 
 .toggle-switch input {
@@ -172,12 +172,12 @@
 .toggle-slider {
   position: absolute;
   cursor: pointer;
-  top: 0;
+  top: 10px; /* Centered vertically: (44px switch - 24px slider) / 2 = 10px */
+  bottom: 10px;
   left: 0;
   right: 0;
-  bottom: 0;
   background-color: var(--color-control-track-off);
-  transition: background-color 0.2s var(--ease-out-quart);
+  transition: background-color 0.12s var(--ease-out-quart);
   border-radius: var(--rounded-full);
 }
 
@@ -189,7 +189,7 @@
   left: 3px;
   bottom: 3px;
   background-color: white;
-  transition: transform 0.2s var(--ease-out-quart);
+  transition: transform 0.12s var(--ease-out-quart);
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -199,7 +199,7 @@ input:checked + .toggle-slider {
 }
 
 input:checked + .toggle-slider:before {
-  transform: translateX(20px);
+  transform: translateX(32px);
 }
 
 input:focus-visible + .toggle-slider {
@@ -229,13 +229,13 @@ input:focus-visible + .toggle-slider {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-  transition: transform 0.25s var(--ease-out-quart), box-shadow 0.25s var(--ease-out-quart), border-color 0.2s var(--ease-out-quart);
+  transition: transform 0.12s var(--ease-out-quart), box-shadow 0.12s var(--ease-out-quart), border-color 0.12s var(--ease-out-quart);
   cursor: pointer;
 }
 
 .sensor-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .sensor-card:focus-visible {
@@ -333,7 +333,7 @@ input:focus-visible + .toggle-slider {
   border: 1px solid var(--color-border);
   border-radius: var(--rounded-md);
   padding: var(--spacing-lg);
-  animation: slideUpFade 0.4s var(--ease-out-quart) both;
+  animation: slideUpFade 0.12s var(--ease-out-quart) both;
 }
 
 .details-header {
@@ -360,8 +360,8 @@ input:focus-visible + .toggle-slider {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  animation: slideUpFade 0.35s var(--ease-out-quart) both;
-  animation-delay: calc(var(--i, 0) * 60ms);
+  animation: slideUpFade 0.12s var(--ease-out-quart) both;
+  animation-delay: calc(var(--i, 0) * 30ms);
 }
 
 .stat-label {
@@ -387,7 +387,12 @@ input:focus-visible + .toggle-slider {
   font-weight: 500;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: opacity 0.15s ease-out;
+  transition: opacity 0.12s ease-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .action-button:hover {
@@ -401,7 +406,8 @@ input:focus-visible + .toggle-slider {
 
 .action-button.btn-alert {
   background-color: rgba(239, 68, 68, 0.1);
-  color: var(--color-status-alert);
+  color: var(--color-status-alert-strong);
+  border: 1px solid var(--color-status-alert-strong);
 }
 .action-button.btn-alert:hover {
   background-color: rgba(239, 68, 68, 0.15);
@@ -409,7 +415,8 @@ input:focus-visible + .toggle-slider {
 
 .action-button.btn-warning {
   background-color: rgba(245, 158, 11, 0.1);
-  color: var(--color-status-warning);
+  color: var(--color-status-warning-strong);
+  border: 1px solid var(--color-status-warning-strong);
 }
 .action-button.btn-warning:hover {
   background-color: rgba(245, 158, 11, 0.15);
@@ -417,7 +424,8 @@ input:focus-visible + .toggle-slider {
 
 .action-button.btn-normal {
   background-color: rgba(16, 185, 129, 0.1);
-  color: var(--color-status-normal);
+  color: var(--color-status-normal-strong);
+  border: 1px solid var(--color-status-normal-strong);
 }
 .action-button.btn-normal:hover {
   background-color: rgba(16, 185, 129, 0.15);
@@ -562,7 +570,7 @@ svg path {
   border: 1px solid var(--color-border);
   border-radius: var(--rounded-md);
   background-color: var(--color-neutral-bg);
-  animation: slideUpFade 0.4s var(--ease-out-quart) both;
+  animation: slideUpFade 0.12s var(--ease-out-quart) both;
 }
 
 .results-header {
@@ -588,7 +596,7 @@ svg path {
 .confidence-bar {
   height: 100%;
   border-radius: 4px;
-  transition: transform 0.5s ease-out;
+  transition: transform 0.12s ease-out;
 }
 
 .recommendations-list {
@@ -626,7 +634,7 @@ svg path {
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.06), rgba(16, 185, 129, 0.02));
   border: 1px solid rgba(16, 185, 129, 0.15);
   border-radius: var(--rounded-sm);
-  animation: slideUpFade 0.3s var(--ease-out-quart) both;
+  animation: slideUpFade 0.12s var(--ease-out-quart) both;
 }
 
 .auto-capture-bar svg {
@@ -692,15 +700,15 @@ svg path {
 
 .capture-thumbnail {
   flex-shrink: 0;
-  width: 56px;
-  height: 42px;
+  width: 64px;
+  height: 48px;
   border-radius: var(--rounded-sm);
   overflow: hidden;
   border: 2px solid transparent;
   padding: 0;
   cursor: pointer;
   background: none;
-  transition: border-color 0.15s ease-out, transform 0.15s ease-out;
+  transition: border-color 0.12s ease-out, transform 0.12s ease-out;
 }
 
 .capture-thumbnail:hover {
@@ -837,8 +845,13 @@ svg path {
   cursor: pointer;
   background-color: transparent;
   color: var(--color-muted-ink);
-  transition: all 0.15s ease-out;
+  transition: all 0.12s ease-out;
   font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .range-button:hover {
@@ -925,11 +938,14 @@ svg path {
   cursor: pointer;
   background-color: transparent;
   color: var(--color-muted-ink);
-  transition: all 0.15s ease-out;
+  transition: all 0.12s ease-out;
   font-family: inherit;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .data-source-button:hover {
@@ -974,5 +990,20 @@ svg path {
   .details-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.simulated-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background-color: var(--color-status-warning-strong);
+  color: var(--color-neutral-bg);
+  padding: 4px 8px;
+  border-radius: var(--rounded-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  z-index: 10;
 }
 

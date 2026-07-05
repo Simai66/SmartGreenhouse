@@ -21,6 +21,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { SENSOR_CONFIG } from '../hooks/useSensorData';
+import { useTranslation } from '../hooks/useTranslation';
 
 // --- Types ---
 interface HistoryRecord {
@@ -42,13 +43,6 @@ interface SensorHistoryChartProps {
   apiBaseUrl?: string;
 }
 
-// --- ค่าคงที่ ---
-const RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
-  { value: '1h', label: '1 ชั่วโมง' },
-  { value: '6h', label: '6 ชั่วโมง' },
-  { value: '24h', label: '24 ชั่วโมง' },
-];
-
 // สีของแต่ละเส้นกราฟ — ใช้ -strong variant ตาม DESIGN.md
 const LINE_COLORS = {
   temperature: '#b91c1c',    // alert-strong (แดง — อุณหภูมิ)
@@ -62,6 +56,7 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
   apiBaseUrl,
 }) => {
   const baseUrl = apiBaseUrl ?? SENSOR_CONFIG.API_BASE_URL;
+  const { t } = useTranslation();
 
   // --- State ---
   const [range, setRange] = useState<TimeRange>('1h');
@@ -133,13 +128,19 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
     });
   };
 
+  const rangeOptions = [
+    { value: '1h' as const, label: t('hour_1') },
+    { value: '6h' as const, label: t('hour_6') },
+    { value: '24h' as const, label: t('hour_24') },
+  ];
+
   // --- เตรียมข้อมูลสำหรับ recharts ---
   const chartData = historyData.map((record) => ({
     time: formatTime(record.created_at),
-    'อุณหภูมิ (°C)': record.temperature,
-    'ความชื้น (%)': record.humidity,
-    'ความชื้นดิน (%)': record.soil_moisture,
-    'แสง (Lux)': record.light_level,
+    [t('chart_temp')]: record.temperature,
+    [t('chart_humidity')]: record.humidity,
+    [t('chart_moisture')]: record.soil_moisture,
+    [t('chart_light')]: record.light_level,
   }));
 
   // --- Loading State ---
@@ -147,7 +148,7 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
     return (
       <div className="history-chart-container" aria-busy="true">
         <div className="chart-header">
-          <span className="details-title">📊 กราฟข้อมูลย้อนหลัง</span>
+          <span className="details-title">{t('chart_title')}</span>
         </div>
         <div className="chart-skeleton">
           <div className="skeleton-bar" style={{ height: '200px', borderRadius: 'var(--rounded-md)' }} />
@@ -161,14 +162,14 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
     return (
       <div className="history-chart-container" aria-live="polite">
         <div className="chart-header">
-          <span className="details-title">📊 กราฟข้อมูลย้อนหลัง</span>
+          <span className="details-title">{t('chart_title')}</span>
         </div>
         <div className="chart-error">
           <span className="chart-error-icon">⚠️</span>
-          <span className="chart-error-text">ไม่สามารถโหลดข้อมูลย้อนหลังได้</span>
+          <span className="chart-error-text">{t('chart_error_load')}</span>
           <span className="chart-error-detail">{error.message}</span>
           <button className="action-button" onClick={() => fetchHistory(range)}>
-            ลองใหม่
+            {t('chart_try_again')}
           </button>
         </div>
       </div>
@@ -179,9 +180,9 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
     <div className="history-chart-container">
       {/* Header: ชื่อ + Range selector */}
       <div className="chart-header">
-        <span className="details-title">📊 กราฟข้อมูลย้อนหลัง</span>
+        <span className="details-title">{t('chart_title')}</span>
         <div className="range-selector">
-          {RANGE_OPTIONS.map((option) => (
+          {rangeOptions.map((option) => (
             <button
               key={option.value}
               className={`range-button ${range === option.value ? 'active' : ''}`}
@@ -197,7 +198,7 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
       {/* แสดง error ถ้ามี แต่ยังมี data เก่าอยู่ */}
       {error && historyData.length > 0 && (
         <div className="chart-stale-notice">
-          ⚠ ไม่สามารถอัปเดตข้อมูลได้ — แสดงข้อมูลล่าสุดที่มี
+          {t('chart_stale_warning')}
         </div>
       )}
 
@@ -231,7 +232,7 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
               />
               <Line
                 type="monotone"
-                dataKey="อุณหภูมิ (°C)"
+                dataKey={t('chart_temp')}
                 stroke={LINE_COLORS.temperature}
                 strokeWidth={2}
                 dot={false}
@@ -239,7 +240,7 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
               />
               <Line
                 type="monotone"
-                dataKey="ความชื้น (%)"
+                dataKey={t('chart_humidity')}
                 stroke={LINE_COLORS.humidity}
                 strokeWidth={2}
                 dot={false}
@@ -247,7 +248,7 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
               />
               <Line
                 type="monotone"
-                dataKey="ความชื้นดิน (%)"
+                dataKey={t('chart_moisture')}
                 stroke={LINE_COLORS.soil_moisture}
                 strokeWidth={2}
                 dot={false}
@@ -255,7 +256,7 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
               />
               <Line
                 type="monotone"
-                dataKey="แสง (Lux)"
+                dataKey={t('chart_light')}
                 stroke={LINE_COLORS.light_level}
                 strokeWidth={2}
                 dot={false}
@@ -266,7 +267,7 @@ export const SensorHistoryChart: React.FC<SensorHistoryChartProps> = ({
         </div>
       ) : (
         <div className="chart-empty">
-          <span>ไม่มีข้อมูลในช่วงเวลาที่เลือก</span>
+          <span>{t('chart_empty')}</span>
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import { useTranslation } from '../hooks/useTranslation';
 
 // --- Types ---
 interface SensorCardProps {
@@ -47,12 +48,27 @@ export const SensorCard: React.FC<SensorCardProps> = ({
   isSelected = false,
   onClick,
 }) => {
+  const { t } = useTranslation();
+
   // --- จัดรูปแบบข้อความ "X วินาทีที่แล้ว" ---
   const formatTimeSince = (seconds: number): string => {
-    if (seconds < 60) return `${seconds} วินาทีที่แล้ว`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} นาทีที่แล้ว`;
-    return `${Math.floor(seconds / 3600)} ชั่วโมงที่แล้ว`;
+    if (seconds < 60) return t('time_seconds_ago', { seconds });
+    if (seconds < 3600) return t('time_minutes_ago', { minutes: Math.floor(seconds / 60) });
+    return t('time_hours_ago', { hours: Math.floor(seconds / 3600) });
   };
+
+  const getTranslatedLabel = (lbl: string): string => {
+    const keyMap: Record<string, string> = {
+      'temperature': 'temp',
+      'humidity': 'humidity',
+      'soil moisture': 'moisture',
+      'light level': 'light'
+    };
+    const key = keyMap[lbl.toLowerCase()] || lbl;
+    return t(key);
+  };
+
+  const displayLabel = getTranslatedLabel(label);
 
   // --- Skeleton Loading State ---
   if (isLoading) {
@@ -61,9 +77,9 @@ export const SensorCard: React.FC<SensorCardProps> = ({
         <div className="card-header">
           <span className="sensor-title">
             {icon}
-            {label}
+            {displayLabel}
           </span>
-          <span className="status-badge skeleton-badge">กำลังโหลด...</span>
+          <span className="status-badge skeleton-badge">{t('loading')}</span>
         </div>
         <div className="sensor-value-container">
           <span className="sensor-value skeleton-text">--.-</span>
@@ -83,13 +99,13 @@ export const SensorCard: React.FC<SensorCardProps> = ({
         <div className="card-header">
           <span className="sensor-title">
             {icon}
-            {label}
+            {displayLabel}
           </span>
-          <span className="status-badge alert">ไม่สามารถเชื่อมต่อ</span>
+          <span className="status-badge alert">{t('cannot_connect')}</span>
         </div>
         <div className="sensor-value-container">
           <span className="sensor-value" style={{ fontSize: '1.5rem', color: 'var(--color-muted-ink)' }}>
-            ไม่มีข้อมูล
+            {t('no_data')}
           </span>
         </div>
         <div className="sensor-footer">
@@ -112,12 +128,12 @@ export const SensorCard: React.FC<SensorCardProps> = ({
       <div className="card-header">
         <span className="sensor-title">
           {icon}
-          {label}
+          {displayLabel}
         </span>
         {/* Badge สถานะ: LIVE (🟢) หรือ OFFLINE (🔴) */}
         <span className={`status-badge ${isStale ? 'alert' : 'normal'}`}>
           <span className="live-indicator-dot" aria-hidden="true" />
-          {isStale ? 'OFFLINE' : 'LIVE'}
+          {isStale ? t('offline') : t('live')}
         </span>
       </div>
 
@@ -134,13 +150,13 @@ export const SensorCard: React.FC<SensorCardProps> = ({
         <div className="sensor-last-update" aria-live="polite">
           <span className="last-update-text">
             {value !== null
-              ? `อัปเดตล่าสุดเมื่อ ${formatTimeSince(secondsSinceUpdate)}`
-              : 'รอข้อมูล...'}
+              ? t('update_last', { time: formatTimeSince(secondsSinceUpdate) })
+              : t('wait_data')}
           </span>
           {/* แสดง error ถ้ามี แต่ยังมี data เก่าอยู่ */}
           {error && value !== null && (
             <span className="sensor-retry-notice">
-              ⚠ กำลังลองเชื่อมต่อใหม่...
+              {t('reconnecting')}
             </span>
           )}
         </div>
