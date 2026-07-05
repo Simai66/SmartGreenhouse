@@ -326,7 +326,7 @@ function App() {
         }
       }));
     }
-  }, [autoMode, sensors.moisture.value, sensors.light.value, controls.pump.checked, controls.growLight.checked]);
+  }, [autoMode, sensors.moisture.value, sensors.light.value, controls.pump.checked, controls.pump.statusText, controls.growLight.checked, controls.growLight.statusText]);
 
   // เปิดกล้อง — ใช้ facingMode ปัจจุบัน
   const startCamera = async (requestedFacingMode?: "user" | "environment") => {
