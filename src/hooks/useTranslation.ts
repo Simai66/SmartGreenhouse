@@ -10,8 +10,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Navbar & Global
     smart_greenhouse: "ระบบโรงเรือนอัจฉริยะ",
     data_source: "แหล่งข้อมูล:",
-    demo_mode: "🎭 เดโม่",
-    live_mode: "📡 ไลฟ์",
+    demo_mode: "เดโม่",
+    live_mode: "ไลฟ์",
     last_update: "อัปเดตล่าสุดเมื่อ: {time}",
     sensor_offline: "เซนเซอร์ออฟไลน์",
     connecting: "กำลังเชื่อมต่อ...",
@@ -115,7 +115,7 @@ export const translations: Record<Language, Record<string, string>> = {
     diagnose_select_img: "กรุณาเลือกหรือถ่ายภาพก่อนทำการวินิจฉัย",
 
     // Chart
-    chart_title: "📊 กราฟข้อมูลย้อนหลัง",
+    chart_title: "กราฟข้อมูลย้อนหลัง",
     hour_1: "1 ชั่วโมง",
     hour_6: "6 ชั่วโมง",
     hour_24: "24 ชั่วโมง",
@@ -154,8 +154,8 @@ export const translations: Record<Language, Record<string, string>> = {
     // Navbar & Global
     smart_greenhouse: "Smart Greenhouse",
     data_source: "Data Source:",
-    demo_mode: "🎭 Demo",
-    live_mode: "📡 Live",
+    demo_mode: "Demo",
+    live_mode: "Live",
     last_update: "Last update: {time}",
     sensor_offline: "Sensor Offline",
     connecting: "Connecting...",
@@ -259,7 +259,7 @@ export const translations: Record<Language, Record<string, string>> = {
     diagnose_select_img: "Please select or snap an image to scan",
 
     // Chart
-    chart_title: "📊 Historical Analytics",
+    chart_title: "Historical Analytics",
     hour_1: "1 Hour",
     hour_6: "6 Hours",
     hour_24: "24 Hours",
