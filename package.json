@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:api": "npm run dev --prefix api",
     "dev:all": "concurrently -k -p \"[{name}]\" -n \"Vite,Hono\" -c \"cyan.bold,green.bold\" \"npm run dev\" \"npm run dev --prefix api\"",
+    "dev:stop": "kill -9 $(lsof -t -i:8787 -i:5173 -i:5174 2>/dev/null) 2>/dev/null || true",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
